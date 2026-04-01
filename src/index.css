@@ -1,0 +1,198 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --bg: #FAFAFA;
+  --surface: #FFFFFF;
+  --primary: #EA580C;
+  --primary-hover: #C2410C;
+  --text: #1E293B;
+  --text-muted: #64748B;
+  --border: #1E293B;
+  --shadow-offset: 4px;
+}
+
+.brutal-shadow { box-shadow: 4px 4px 0px 0px #1E293B; }
+.active-press:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px 0px #1E293B; }
+.scanline {
+    background: linear-gradient(to bottom, rgba(30, 41, 59, 0.03) 50%, rgba(255, 255, 255, 0) 50%);
+    background-size: 100% 4px;
+}
+.grid-pattern {
+    background-image: radial-gradient(#1E293B 0.5px, transparent 0.5px);
+    background-size: 20px 20px;
+    opacity: 0.05;
+}
+
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  min-height: 100vh;
+  /* subtle repeating dot-grid pattern */
+  background-image: radial-gradient(var(--text-muted) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: 0 0;
+}
+
+h1, h2, h3, h4, .font-mono {
+  font-family: 'Space Grotesk', sans-serif;
+  text-transform: uppercase;
+}
+
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.cyber-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0px var(--border);
+  border-radius: 0;
+  padding: 1.5rem;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 4rem;
+  padding-top: 4rem;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 3rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0px var(--border);
+}
+
+.hero h1 {
+  font-size: 4rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 1rem;
+  letter-spacing: -0.05em;
+}
+
+.hero p {
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.duel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 2rem;
+}
+
+.duel-card {
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  box-shadow: 2px 2px 0px var(--border);
+  background: var(--surface);
+}
+
+.status-open { border-color: #16A34A; color: #16A34A; }
+.status-matched { border-color: #2563EB; color: #2563EB; }
+.status-resolved { border-color: #9333EA; color: #9333EA; }
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  border: 2px solid var(--border);
+  font-size: 1rem;
+  text-transform: uppercase;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 4px 4px 0px var(--border);
+  outline: none;
+}
+
+.btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--border);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--border);
+}
+
+.stake-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--border);
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+}
+
+.cyber-input {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid var(--border);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  outline: none;
+  box-shadow: inset 2px 2px 0px rgba(0,0,0,0.05);
+}
+
+.cyber-input:focus {
+  border-color: var(--primary);
+}
+
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dashed var(--border);
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+.data-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+}
