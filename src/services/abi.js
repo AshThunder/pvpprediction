@@ -4,7 +4,7 @@ export const ORACLE_DUEL_ABI = [
     "type": "function",
     "stateMutability": "payable",
     "inputs": [
-      { "name": "claim", "type": "string" }
+      { "name": "claim_text", "type": "string" }
     ],
     "outputs": [
       { "name": "", "type": "uint256" }
@@ -15,8 +15,43 @@ export const ORACLE_DUEL_ABI = [
     "type": "function",
     "stateMutability": "payable",
     "inputs": [
+      { "name": "duel_id", "type": "uint256" },
+      { "name": "evidence_query", "type": "string" }
+    ],
+    "outputs": []
+  },
+  {
+    "name": "cancel_duel",
+    "type": "function",
+    "stateMutability": "nonpayable",
+    "inputs": [
       { "name": "duel_id", "type": "uint256" }
     ],
+    "outputs": []
+  },
+  {
+    "name": "resolve_duel",
+    "type": "function",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "duel_id", "type": "uint256" }
+    ],
+    "outputs": []
+  },
+  {
+    "name": "claim_winnings",
+    "type": "function",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "duel_id", "type": "uint256" }
+    ],
+    "outputs": []
+  },
+  {
+    "name": "withdraw_fees",
+    "type": "function",
+    "stateMutability": "nonpayable",
+    "inputs": [],
     "outputs": []
   },
   {
@@ -32,18 +67,28 @@ export const ORACLE_DUEL_ABI = [
         "type": "tuple",
         "components": [
           { "name": "challenger", "type": "address" },
+          { "name": "opponent", "type": "address" },
           { "name": "claim", "type": "string" },
           { "name": "stake", "type": "uint256" },
           { "name": "status", "type": "string" },
-          { "name": "opponent", "type": "address" },
           { "name": "winner", "type": "address" },
-          { "name": "reason", "type": "string" }
+          { "name": "evidence_a", "type": "string" },
+          { "name": "evidence_b", "type": "string" }
         ]
       }
     ]
   },
   {
-    "name": "get_duel_count",
+    "name": "get_next_duel_id",
+    "type": "function",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [
+      { "name": "", "type": "uint256" }
+    ]
+  },
+  {
+    "name": "get_fee_balance",
     "type": "function",
     "stateMutability": "view",
     "inputs": [],

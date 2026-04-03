@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useWriteContract, useReadContract, useWaitForTransactionReceipt, usePublicClient, useSwitchChain } from 'wagmi';
-import { Swords, Info, Trophy, AlertCircle, PlusCircle, TerminalSquare } from 'lucide-react';
+import { Swords, Info, Trophy, AlertCircle, PlusCircle, TerminalSquare, XCircle, DollarSign } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseEther, formatEther } from 'viem';
 import { CONTRACT_ADDRESSES, getGenClient } from '../services/genlayer';
@@ -17,58 +17,51 @@ const Arena = ({ onBackToHome, onNavigate }) => {
   const [matchingDuelId, setMatchingDuelId] = useState(null);
   const [matchingEvidence, setMatchingEvidence] = useState('');
   const [rpcStatus, setRpcStatus] = useState('Checking...');
+  const [loading, setLoading] = useState(false);
+  const [nextDuelId, setNextDuelId] = useState(0n);
 
   const currentContractAddress = chainId && CONTRACT_ADDRESSES[chainId] ? CONTRACT_ADDRESSES[chainId] : CONTRACT_ADDRESSES[4221];
 
-  const [nextDuelId, setNextDuelId] = useState(0n);
-  const [loading, setLoading] = useState(false);
-
   // Fetch duels from contract via genlayer-js
-  useEffect(() => {
-    const fetchAllData = async () => {
-      if (!currentContractAddress) {
-        console.warn("No contract address found for chain:", chainId);
-        return;
-      }
-      setLoading(true);
-      try {
-        console.log("Fetching from contract:", currentContractAddress, "on chain:", chainId || 'default');
-        const client = getGenClient(chainId);
-        
-        const countBig = await client.readContract({
-          address: currentContractAddress,
-          abi: ORACLE_DUEL_ABI,
-          functionName: 'get_duel_count',
-        });
-        
-        const count = Number(countBig || 0n);
-        setNextDuelId(countBig);
-        console.log("Total duels found:", count);
+  const fetchAllData = async () => {
+    if (!currentContractAddress || !publicClient) return;
+    setLoading(true);
+    try {
+      const countBig = await publicClient.readContract({
+        address: currentContractAddress,
+        abi: ORACLE_DUEL_ABI,
+        functionName: 'get_next_duel_id',
+      });
+      
+      const count = Number(countBig || 0n);
+      setNextDuelId(countBig);
 
-        const fetchedDuels = [];
-        for (let i = 0; i < count; i++) {
-          try {
-            const duel = await client.readContract({
-              address: currentContractAddress,
-              abi: ORACLE_DUEL_ABI,
-              functionName: 'get_duel',
-              args: [BigInt(i)],
-            });
-            if (duel && duel.challenger !== '0x0000000000000000000000000000000000000000') {
-              fetchedDuels.push({ id: Number(i), ...duel });
-            }
-          } catch (e) {
-            console.error(`Error fetching duel ${i}:`, e);
+      const fetchedDuels = [];
+      // IDs are 1-based
+      for (let i = 1; i < count; i++) {
+        try {
+          const duel = await publicClient.readContract({
+            address: currentContractAddress,
+            abi: ORACLE_DUEL_ABI,
+            functionName: 'get_duel',
+            args: [BigInt(i)],
+          });
+          if (duel && duel.challenger !== '0x0000000000000000000000000000000000000000') {
+            fetchedDuels.push({ id: Number(i), ...duel });
           }
+        } catch (e) {
+          console.error(`Error fetching duel ${i}:`, e);
         }
-        setDuels(fetchedDuels.reverse());
-      } catch (err) {
-        console.error("Critical fetch error:", err);
-      } finally {
-        setLoading(false);
       }
-    };
+      setDuels(fetchedDuels.reverse());
+    } catch (err) {
+      console.error("Critical fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchAllData();
     
     const checkRpc = async () => {
@@ -81,7 +74,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
         if (res.ok) setRpcStatus('ONLINE');
         else setRpcStatus('OFFLINE');
       } catch (e) {
-        setRpcStatus('ERR_CORS');
+        setRpcStatus('ERR_NOCORS');
       }
     };
     checkRpc();
@@ -89,7 +82,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
     const interval = setInterval(() => {
       fetchAllData();
       checkRpc();
-    }, 10000); 
+    }, 15000); 
     return () => clearInterval(interval);
   }, [currentContractAddress, chainId]);
 
@@ -109,30 +102,12 @@ const Arena = ({ onBackToHome, onNavigate }) => {
     else if (isTxSuccess) {
       setTxStatus('success');
       setTimeout(() => setTxStatus(null), 5000);
+      fetchAllData();
     } else if (isWriteError) setTxStatus('error');
   }, [isWritePending, isTxLoading, isTxSuccess, isWriteError]);
 
-  const handleSyncNetwork = async () => {
-    if (!window.ethereum) return;
-    try {
-      await window.ethereum.request({
-        method: 'wallet_addEthereumChain',
-        params: [{
-          chainId: '0x107d',
-          chainName: 'GenLayer Bradbury',
-          nativeCurrency: { name: 'GEN Token', symbol: 'GEN', decimals: 18 },
-          rpcUrls: ['https://rpc-bradbury.genlayer.com/'],
-          blockExplorerUrls: ['https://explorer-bradbury.genlayer.com/'],
-        }],
-      });
-    } catch (e) {
-      console.error("Sync error:", e);
-    }
-  };
-
   const handleCreateDuel = () => {
-    if (!newClaim || !newStake || !currentContractAddress) return;
-    
+    if (!newClaim || !newStake) return;
     writeContract({
       address: currentContractAddress,
       abi: ORACLE_DUEL_ABI,
@@ -142,12 +117,10 @@ const Arena = ({ onBackToHome, onNavigate }) => {
       gas: 1_000_000n,
       gasPrice: 1_000_000_000n,
     });
-    
     setIsCreating(false);
   };
 
   const handleMatchStake = (duelId, stake, evidence) => {
-    if (!currentContractAddress) return;
     writeContract({
       address: currentContractAddress,
       abi: ORACLE_DUEL_ABI,
@@ -158,275 +131,251 @@ const Arena = ({ onBackToHome, onNavigate }) => {
       gasPrice: 1_000_000_000n,
     });
     setMatchingDuelId(null);
-    setMatchingEvidence('');
   };
 
   const handleResolveAI = (duelId) => {
-    if (!currentContractAddress) return;
     writeContract({
       address: currentContractAddress,
       abi: ORACLE_DUEL_ABI,
       functionName: 'resolve_duel',
+      args: [BigInt(duelId)],
+      gas: 1_000_000n,
+      gasPrice: 1_000_000_000n,
+    });
+  };
+
+  const handleCancelDuel = (duelId) => {
+    writeContract({
+      address: currentContractAddress,
+      abi: ORACLE_DUEL_ABI,
+      functionName: 'cancel_duel',
       args: [BigInt(duelId)],
       gas: 500_000n,
       gasPrice: 1_000_000_000n,
     });
   };
 
+  const handleClaimWinnings = (duelId) => {
+    writeContract({
+      address: currentContractAddress,
+      abi: ORACLE_DUEL_ABI,
+      functionName: 'claim_winnings',
+      args: [BigInt(duelId)],
+      gas: 500_000n,
+      gasPrice: 1_000_000_000n,
+    });
+  };
+
+  const handleSyncNetwork = async () => {
+    if (!window.ethereum) return;
+    try {
+      await window.ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [{
+          chainId: '0x107d',
+          chainName: 'GenLayer Testnet Chain',
+          nativeCurrency: { name: 'GEN', symbol: 'GEN', decimals: 18 },
+          rpcUrls: ['https://zksync-os-testnet-genlayer.zksync.dev'],
+          blockExplorerUrls: ['https://zksync-os-testnet-genlayer.explorer.zksync.dev/'],
+        }],
+      });
+    } catch (e) {
+      console.error("Sync error:", e);
+    }
+  };
+
+  const getStatusConfig = (status) => {
+    switch (status) {
+      case 'OPEN': return { label: 'OPEN', color: 'bg-orange-600' };
+      case 'MATCHED': return { label: 'IN PROGRESS', color: 'bg-blue-600' };
+      case 'RESOLVED': return { label: 'READY TO CLAIM', color: 'bg-green-600' };
+      case 'CLAIMED': return { label: 'FINALIZED', color: 'bg-slate-500' };
+      case 'CANCELLED': return { label: 'CANCELLED', color: 'bg-red-600' };
+      default: return { label: status, color: 'bg-slate-400' };
+    }
+  };
+
   return (
-    <div className="app-container">
-      <header className="flex justify-between items-center my-8 p-6 border-2 border-slate-900 bg-white shadow-[4px_4px_0px_0px_#1E293B]">
-        <div 
-          onClick={onBackToHome}
-          className="flex items-center gap-4 cursor-pointer"
-        >
-          <Swords size={32} color="#EA580C" />
-          <h2 className="text-2xl font-black font-headline uppercase italic tracking-tighter text-slate-900">PVP PREDICTION ARENA</h2>
+    <div className="bg-white dark:bg-slate-950 min-h-screen text-slate-900 dark:text-white font-['Inter']">
+      <nav className="bg-white dark:bg-slate-950 flex justify-between items-center w-full px-6 py-4 fixed top-0 z-50 border-b-2 border-slate-900 dark:border-slate-100 shadow-[4px_4px_0px_0px_#1E293B]">
+        <div className="text-2xl font-black text-slate-900 dark:text-white italic font-['Space_Grotesk'] uppercase tracking-tighter cursor-pointer flex items-center gap-2" onClick={onBackToHome}>
+          <Swords size={28} className="text-orange-600" />
+          PVP PREDICTION ARENA
         </div>
-        <nav className="hidden md:flex gap-8 items-center h-full">
-          <button 
-            onClick={() => onNavigate('home')}
-            className="font-headline uppercase tracking-tighter transition-colors duration-75 text-slate-900 hover:bg-orange-600 hover:text-white px-2 py-1"
-          >
-            HOME
-          </button>
-          <button 
-            className="font-headline uppercase tracking-tighter transition-colors duration-75 text-orange-600 border-b-2 border-orange-600 py-1"
-          >
-            PLAY
-          </button>
-          <button 
-            onClick={() => onNavigate('about')}
-            className="font-headline uppercase tracking-tighter transition-colors duration-75 text-slate-900 hover:bg-orange-600 hover:text-white px-2 py-1"
-          >
-            ABOUT
-          </button>
-        </nav>
         <div className="flex items-center gap-4">
+          <div className="hidden md:flex gap-8 items-center mr-8">
+            <button onClick={() => onNavigate('home')} className="font-headline uppercase tracking-tighter text-slate-900 hover:text-orange-600 font-bold">HOME</button>
+            <button className="font-headline uppercase tracking-tighter text-orange-600 border-b-2 border-orange-600 font-bold">PLAY</button>
+            <button onClick={() => onNavigate('about')} className="font-headline uppercase tracking-tighter text-slate-900 hover:text-orange-600 font-bold">ABOUT</button>
+          </div>
+          <ConnectButton />
+        </div>
+      </nav>
+
+      <main className="pt-32 pb-20 px-6 max-w-7xl mx-auto">
+        <section className="mb-12 border-4 border-slate-900 bg-white p-8 shadow-[8px_8px_0px_0px_#EA580C] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-5xl font-black uppercase font-headline tracking-tighter mb-2 italic">BATTLE CENTER</h1>
+            <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">FAIR. DECENTRALIZED. MACHINE-VERIFIED PREDICTIONS.</p>
+          </div>
           <button 
             onClick={handleSyncNetwork}
-            className="btn py-2 px-4 text-sm"
+            className="bg-orange-600 text-white px-6 py-2 font-black uppercase tracking-tighter border-2 border-slate-900 shadow-[4px_4px_0px_0px_#000] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all text-xs"
           >
-            SYNC RPC
+            🔄 SYNC BRADBURY NET
           </button>
-          <div className={`text-xs font-headline font-bold p-2 border-2 border-slate-900 ${rpcStatus === 'ONLINE' ? 'bg-[#16A34A]' : 'bg-[#DC2626]'} text-white uppercase`}>
-            SYS: {rpcStatus}
-          </div>
-          <div className="border-2 border-slate-900 p-[2px] bg-slate-900">
-            <ConnectButton />
-          </div>
-        </div>
-      </header>
+        </section>
 
-      {isWrongNetwork && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="cyber-card mb-8 flex items-center justify-between border-[#EA580C] shadow-[4px_4px_0px_0px_#EA580C]"
-        >
-          <span className="font-headline font-bold uppercase flex items-center">
-            <AlertCircle size={20} color="#EA580C" className="mr-2" />
-            CRITICAL: WRONG NETWORK DETECTED. SWITCH TO BRADBURY (4221).
-          </span>
-          <button
-            onClick={handleSyncNetwork}
-            className="btn btn-primary"
-          >
-            INITIATE SWITCH
-          </button>
-        </motion.div>
-      )}
-
-      {/* Arena Title Section */}
-      <section className="bg-white border-2 border-slate-900 p-8 mb-12 shadow-[4px_4px_0px_0px_#1E293B] text-center">
-        <h1 className="font-headline font-black text-5xl uppercase italic tracking-tighter text-slate-900 mb-2">BATTLE CENTER</h1>
-        <p className="font-headline font-bold text-slate-500 uppercase tracking-widest text-sm">PICK A WINNER. BET TOKENS. WIN BIG.</p>
-      </section>
-
-      <main>
-        <AnimatePresence>
-          {txStatus === 'pending' && (
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="cyber-card mb-8 border-[#2563EB] shadow-[4px_4px_0px_0px_#2563EB]">
-              <strong className="font-headline">[ TX_PENDING ]</strong> Awaiting on-chain confirmation...
-            </motion.div>
-          )}
-          {txStatus === 'success' && (
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="cyber-card mb-8 border-[#16A34A] shadow-[4px_4px_0px_0px_#16A34A]">
-              <strong className="font-headline">[ TX_SUCCESS ]</strong> Telemetry verified. Transaction complete.
-            </motion.div>
-          )}
-          {txStatus === 'error' && (
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="cyber-card mb-8 border-[#DC2626] shadow-[4px_4px_0px_0px_#DC2626]">
-              <strong className="font-headline">[ TX_ERROR ]</strong> {writeError?.shortMessage || "Reverted by node."}
-              <button onClick={() => setTxStatus(null)} className="ml-4 bg-transparent border-none text-slate-900 cursor-pointer font-headline font-bold underline">DISMISS</button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex gap-2">
-            {['GAMES', 'MY GAMES', 'HISTORY'].map(tab => (
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+          <div className="flex bg-slate-100 p-1 border-2 border-slate-900">
+            {['AVAILABLE', 'MY GAMES', 'HISTORY'].map(tab => (
               <button 
                 key={tab}
-                className={`btn ${activeTab === tab ? 'btn-primary' : ''}`}
                 onClick={() => setActiveTab(tab)}
+                className={`px-6 py-2 font-black uppercase tracking-tighter transition-all ${activeTab === tab ? 'bg-orange-600 text-white' : 'hover:bg-slate-200 text-slate-600'}`}
               >
                 {tab}
               </button>
             ))}
           </div>
-          <button className="btn btn-primary flex items-center gap-2" onClick={() => setIsCreating(true)}>
+          <button 
+            onClick={() => setIsCreating(true)}
+            className="bg-slate-900 text-white px-8 py-3 font-black uppercase tracking-tighter flex items-center gap-2 border-2 border-slate-900 shadow-[4px_4px_0px_0px_#EA580C] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
+          >
             <PlusCircle size={20} />
-            NEW GAME
+            CREATE NEW DUEL
           </button>
         </div>
 
-        <div className="duel-grid">
-          {loading && duels.length === 0 && (
-            <div className="cyber-card col-span-full text-center py-12 font-headline font-bold">
-              [ LOADING GAMES... ]
-            </div>
-          )}
-          {!loading && duels.length === 0 && (
-            <div className="cyber-card col-span-full text-center py-12 font-headline font-bold">
-              [ NO GAMES FOUND ]
-            </div>
-          )}
-          
-          {duels.filter(d => {
-            if (activeTab === 'AVAILABLE') {
-              return d.status === 'OPEN' && d.challenger !== address;
-            } else if (activeTab === 'MY DUELS') {
-              return d.challenger === address || d.opponent === address;
-            } else if (activeTab === 'GLOBAL HISTORY') {
-              return true;
-            }
-            return false;
-          }).map((duel) => (
-            <div key={duel.id} className="cyber-card duel-card flex flex-col">
-              <div className="flex justify-between items-start mb-6">
-                <div className={`status-badge status-${duel.status.toLowerCase()}`}>
-                  {duel.status}
-                </div>
-                <div className="font-headline text-xs text-slate-500">ID: {duel.id}</div>
+        <AnimatePresence>
+          {txStatus && (
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className={`mb-8 p-4 border-2 border-slate-900 font-black uppercase tracking-widest flex items-center justify-between ${txStatus === 'success' ? 'bg-green-100' : txStatus === 'pending' ? 'bg-blue-100' : 'bg-red-100'}`}>
+              <div className="flex items-center gap-3">
+                {txStatus === 'pending' ? <TerminalSquare className="animate-pulse" /> : txStatus === 'success' ? <Trophy /> : <AlertCircle />}
+                {txStatus === 'pending' ? 'Awaiting Oracle Confirmation...' : txStatus === 'success' ? 'Telemetry Verified. Action Complete.' : 'Critical Error: Action Aborted.'}
               </div>
-              
-              <p className="text-xl font-bold mb-8 min-h-[4rem] text-slate-900 leading-tight">
-                "{duel.claim}"
-              </p>
-              
-              <div className="mb-6">
-                <div className="data-row">
-                  <span className="data-label">PLAYER 1:</span>
-                  <span className="font-mono">{duel.challenger.slice(0, 8)}...{duel.challenger.slice(-4)}</span>
-                </div>
-                {duel.opponent && (
-                  <div className="data-row">
-                    <span className="data-label">PLAYER 2:</span>
-                    <span className="font-mono">{duel.opponent.slice(0, 8)}...{duel.opponent.slice(-4)}</span>
-                  </div>
-                )}
-              </div>
+              <button onClick={() => setTxStatus(null)} className="text-xs underline">DISMISS</button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-              <div className="stake-info">
-                <div>
-                  <h2 className="text-xl font-headline font-black uppercase text-slate-900">PVP PREDICTION ARENA</h2>
-                  <span className="text-3xl font-black font-headline text-slate-900">
-                    {formatEther(duel.stake)}
-                  </span>
-                  <span className="text-xs font-black text-orange-600 ml-1">GEN</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {loading && duels.length === 0 ? (
+            <div className="col-span-full py-20 text-center font-black uppercase tracking-widest text-slate-400">Syncing Bradbury Net...</div>
+          ) : duels.filter(d => {
+            if (activeTab === 'AVAILABLE') return d.status === 'OPEN' && d.challenger !== address;
+            if (activeTab === 'MY GAMES') return d.challenger === address || d.opponent === address;
+            return true;
+          }).map(duel => {
+            const config = getStatusConfig(duel.status);
+            return (
+              <motion.div layout key={duel.id} className="bg-white border-2 border-slate-900 p-6 shadow-[8px_8px_0px_0px_#1E293B] flex flex-col hover:shadow-[12px_12px_0px_0px_#1E293B] transition-all">
+                <div className="flex justify-between items-center mb-6">
+                  <span className={`text-[10px] font-black px-2 py-1 text-white uppercase ${config.color}`}>{config.label}</span>
+                  <span className="text-[10px] font-bold text-slate-400">ID: {duel.id.toString().padStart(4, '0')}</span>
                 </div>
                 
-                {duel.status === 'OPEN' && address !== duel.challenger && (
-                  <button className="btn btn-primary py-2 px-4" onClick={() => setMatchingDuelId(duel.id)}>PLAY</button>
-                )}
-                {duel.status === 'MATCHED' && (
-                  <button className="btn btn-primary py-2 px-4 bg-slate-900" onClick={() => handleResolveAI(duel.id)}>GET RESULT</button>
-                )}
-                {(duel.status === 'RESOLVED' || duel.status === 'CLAIMED') && (
-                  <div className="py-2 px-4 border-2 border-slate-900 bg-[#FAFAFA] font-headline font-bold text-sm">
-                    WINNER: <span className="text-orange-600">{duel.winner === duel.challenger ? 'PLAYER 1' : 'PLAYER 2'}</span>
+                <h3 className="text-xl font-black lowercase font-headline mb-8 line-clamp-3 leading-tight min-h-[4.5rem]">
+                  "{duel.claim}"
+                </h3>
+
+                <div className="mt-auto pt-6 border-t-2 border-slate-100">
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Total Stake</div>
+                      <div className="text-2xl font-black text-slate-900 font-headline italic">
+                        {formatEther(duel.stake)} <span className="text-xs text-orange-600 not-italic ml-1">GEN</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                    {duel.status === 'OPEN' && address !== duel.challenger && (
+                      <button onClick={() => setMatchingDuelId(duel.id)} className="bg-orange-600 text-white font-black px-4 py-2 text-xs uppercase shadow-[2px_2px_0px_0px_#000] hover:shadow-none transition-all">MATCH</button>
+                    )}
+                    {duel.status === 'OPEN' && address === duel.challenger && (
+                      <button onClick={() => handleCancelDuel(duel.id)} className="border-2 border-red-600 text-red-600 font-black px-4 py-2 text-xs uppercase flex items-center gap-2 hover:bg-red-50 transition-all">
+                        <XCircle size={14} /> CANCEL
+                      </button>
+                    )}
+                    {duel.status === 'MATCHED' && (
+                      <button onClick={() => handleResolveAI(duel.id)} className="bg-slate-900 text-white font-black px-4 py-2 text-xs uppercase flex items-center gap-2 shadow-[2px_2px_0px_0px_#000] hover:shadow-none transition-all">
+                        <TerminalSquare size={14} /> AI CHECK
+                      </button>
+                    )}
+                    {duel.status === 'RESOLVED' && duel.winner === address && (
+                      <button onClick={() => handleClaimWinnings(duel.id)} className="bg-green-600 text-white font-black px-4 py-2 text-xs uppercase flex items-center gap-2 shadow-[2px_2px_0px_0px_#000] hover:shadow-none transition-all">
+                        <Trophy size={14} /> CLAIM
+                      </button>
+                    )}
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
-          ))}
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </main>
 
+      {/* Modals for Create and Match */}
       <AnimatePresence>
-        {isCreating && (
-          <div className="fixed inset-0 bg-white/90 flex items-center justify-center z-[100] backdrop-blur-sm">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.1 }}
-              className="cyber-card w-full max-w-[600px] p-12 bg-white shadow-[12px_12px_0px_0px_#EA580C]" 
-            >
-              <h3 className="mb-8 text-2xl font-black font-headline border-b-2 border-slate-900 pb-4 uppercase italic italic tracking-tighter">START A GAME</h3>
-              
-              <div className="flex flex-col gap-8">
-                <div>
-                  <label className="form-label">YOUR PREDICTION</label>
-                  <textarea 
-                    className="cyber-input" 
-                    placeholder="Example: The price of BTC will stay high"
-                    rows={4}
-                    value={newClaim}
-                    onChange={(e) => setNewClaim(e.target.value)}
-                  />
-                </div>
-                
-                <div>
-                  <label className="form-label">BET AMOUNT (GEN)</label>
-                  <input 
-                    type="number" 
-                    className="cyber-input text-2xl font-headline font-black h-[60px]"
-                    value={newStake}
-                    onChange={(e) => setNewStake(e.target.value)}
-                  />
-                </div>
-                
-                <div className="flex gap-4 mt-4">
-                  <button className="btn btn-primary flex-[2] p-4" onClick={handleCreateDuel}>SUBMIT GAME</button>
-                  <button className="btn flex-1" onClick={() => setIsCreating(false)}>CANCEL</button>
-                </div>
-              </div>
+        {(isCreating || matchingDuelId) && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-md flex items-center justify-center p-6">
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white border-4 border-slate-900 p-10 max-w-xl w-full shadow-[16px_16px_0px_0px_#EA580C]">
+              {isCreating ? (
+                <>
+                  <h2 className="text-3xl font-black uppercase mb-8 italic tracking-tighter">NEW BATTLE PROPOSAL</h2>
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-xs font-black uppercase mb-2">Claim to Verify</label>
+                      <textarea 
+                        value={newClaim}
+                        onChange={(e) => setNewClaim(e.target.value)}
+                        className="w-full border-2 border-slate-900 p-4 font-bold focus:outline-none focus:ring-2 ring-orange-600"
+                        rows={3}
+                        placeholder="e.g. BTC will hit 100k by tomorrow..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black uppercase mb-2">Stake (GEN)</label>
+                      <input 
+                        type="number"
+                        value={newStake}
+                        onChange={(e) => setNewStake(e.target.value)}
+                        className="w-full border-2 border-slate-900 p-4 font-black text-2xl focus:outline-none"
+                      />
+                    </div>
+                    <div className="flex gap-4 pt-4">
+                      <button onClick={handleCreateDuel} className="flex-[2] bg-orange-600 text-white font-black py-4 uppercase tracking-widest shadow-[4px_4px_0px_0px_#000]">LOCK STAKE</button>
+                      <button onClick={() => setIsCreating(false)} className="flex-1 font-black uppercase underline">ABORT</button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-3xl font-black uppercase mb-8 italic tracking-tighter">CHALLENGE ACCEPTED</h2>
+                  <div className="space-y-6">
+                    <div className="bg-slate-50 p-6 border-2 border-dashed border-slate-300 italic font-bold">
+                      "{duels.find(d => d.id === matchingDuelId)?.claim}"
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black uppercase mb-2">Counter-Evidence / Context</label>
+                      <textarea 
+                        value={matchingEvidence}
+                        onChange={(e) => setMatchingEvidence(e.target.value)}
+                        className="w-full border-2 border-slate-900 p-4 font-bold focus:outline-none"
+                        rows={3}
+                        placeholder="Why is Player 1 wrong? (Optional)"
+                      />
+                    </div>
+                    <div className="flex gap-4 pt-4">
+                      <button onClick={() => handleMatchStake(matchingDuelId, duels.find(d => d.id === matchingDuelId)?.stake, matchingEvidence)} className="flex-[2] bg-slate-900 text-white font-black py-4 uppercase tracking-widest shadow-[4px_4px_0px_0px_#EA580C]">MATCH & BET</button>
+                      <button onClick={() => setMatchingDuelId(null)} className="flex-1 font-black uppercase underline">ABORT</button>
+                    </div>
+                  </div>
+                </>
+              )}
             </motion.div>
-          </div>
-        )}
-        
-        {matchingDuelId && (
-          <div className="fixed inset-0 bg-white/90 flex items-center justify-center z-[100] backdrop-blur-sm">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.1 }}
-              className="cyber-card w-full max-w-[600px] p-12 bg-white shadow-[12px_12px_0px_0px_#EA580C]" 
-            >
-              <h3 className="mb-8 text-2xl font-black font-headline border-b-2 border-slate-900 pb-4 uppercase italic tracking-tighter">JOIN GAME</h3>
-              
-              <div className="flex flex-col gap-8">
-                <div>
-                  <label className="form-label">YOUR EVIDENCE (OPTIONAL)</label>
-                  <textarea 
-                    className="cyber-input" 
-                    placeholder="Why are they wrong?"
-                    rows={4}
-                    value={matchingEvidence}
-                    onChange={(e) => setMatchingEvidence(e.target.value)}
-                  />
-                </div>
-                
-                <div className="flex gap-4 mt-4">
-                  <button className="btn btn-primary flex-[2] p-4" onClick={() => handleMatchStake(matchingDuelId, duels.find(d => d.id === matchingDuelId)?.stake, matchingEvidence)}>JOIN & BET</button>
-                  <button className="btn flex-1" onClick={() => { setMatchingDuelId(null); setMatchingEvidence(''); }}>CANCEL</button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

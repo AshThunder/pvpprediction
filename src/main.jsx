@@ -10,18 +10,18 @@ import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 
 const bradbury = {
   id: 4221,
-  name: 'GenLayer Bradbury',
+  name: 'GenLayer Testnet Chain',
   nativeCurrency: { 
     decimals: 18, 
     name: 'GEN Token', 
     symbol: 'GEN' 
   },
   rpcUrls: { 
-    default: { http: ['https://rpc-bradbury.genlayer.com/'] }, 
-    public: { http: ['https://rpc-bradbury.genlayer.com/'] } 
+    default: { http: ['https://zksync-os-testnet-genlayer.zksync.dev'] }, 
+    public: { http: ['https://zksync-os-testnet-genlayer.zksync.dev'] } 
   },
   blockExplorers: { 
-    default: { name: 'GenLayer Explorer', url: 'https://explorer-bradbury.genlayer.com/' } 
+    default: { name: 'GenLayer Explorer', url: 'https://zksync-os-testnet-genlayer.explorer.zksync.dev/' } 
   },
   testnet: true,
 };
