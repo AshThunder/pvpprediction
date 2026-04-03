@@ -88,82 +88,151 @@ const Arena = ({ onBackToHome, onNavigate }) => {
 
   const [newClaim, setNewClaim] = useState('');
   const [newStake, setNewStake] = useState('10');
-  const [isCreating, setIsCreating] = useState(false);
   const [txStatus, setTxStatus] = useState(null); 
+  const [txHash, setTxHash] = useState(null);
 
-  const { writeContract, data: hash, isError: isWriteError, error: writeError, isPending: isWritePending } = useWriteContract();
+  const handleCreateDuel = async () => {
+    if (!newClaim || !newStake || !address) return;
+    setIsCreating(false);
+    setTxStatus('pending');
+    
+    try {
+      const client = getGenClient(chainId || 4221, address);
+      await client.connect("testnetBradbury");
 
-  const { isLoading: isTxLoading, isSuccess: isTxSuccess } = useWaitForTransactionReceipt({
-    hash,
-  });
+      const hash = await client.writeContract({
+        address: currentContractAddress,
+        abi: ORACLE_DUEL_ABI,
+        functionName: 'create_duel',
+        args: [newClaim],
+        value: parseEther(newStake),
+        leaderOnly: true,
+      });
 
-  useEffect(() => {
-    if (isWritePending || isTxLoading) setTxStatus('pending');
-    else if (isTxSuccess) {
+      setTxHash(hash);
+      await client.waitForTransactionReceipt({ hash, status: 'FINALIZED' });
+      
       setTxStatus('success');
       setTimeout(() => setTxStatus(null), 5000);
       fetchAllData();
-    } else if (isWriteError) setTxStatus('error');
-  }, [isWritePending, isTxLoading, isTxSuccess, isWriteError]);
-
-  const handleCreateDuel = () => {
-    if (!newClaim || !newStake) return;
-    writeContract({
-      address: currentContractAddress,
-      abi: ORACLE_DUEL_ABI,
-      functionName: 'create_duel',
-      args: [newClaim],
-      value: parseEther(newStake),
-      gas: 1_000_000n,
-      gasPrice: 1_000_000_000n,
-    });
-    setIsCreating(false);
+    } catch (err) {
+      console.error("Create duel error:", err);
+      setTxStatus('error');
+    }
   };
 
-  const handleMatchStake = (duelId, stake, evidence) => {
-    writeContract({
-      address: currentContractAddress,
-      abi: ORACLE_DUEL_ABI,
-      functionName: 'match_duel',
-      args: [BigInt(duelId), evidence || ""],
-      value: BigInt(stake),
-      gas: 1_000_000n,
-      gasPrice: 1_000_000_000n,
-    });
+  const handleMatchStake = async (duelId, stake, evidence) => {
+    if (!address) return;
     setMatchingDuelId(null);
+    setTxStatus('pending');
+
+    try {
+      const client = getGenClient(chainId || 4221, address);
+      await client.connect("testnetBradbury");
+
+      const hash = await client.writeContract({
+        address: currentContractAddress,
+        abi: ORACLE_DUEL_ABI,
+        functionName: 'match_duel',
+        args: [BigInt(duelId), evidence || ""],
+        value: BigInt(stake),
+        leaderOnly: true,
+      });
+
+      setTxHash(hash);
+      await client.waitForTransactionReceipt({ hash, status: 'FINALIZED' });
+      
+      setTxStatus('success');
+      setTimeout(() => setTxStatus(null), 5000);
+      fetchAllData();
+    } catch (err) {
+      console.error("Match duel error:", err);
+      setTxStatus('error');
+    }
   };
 
-  const handleResolveAI = (duelId) => {
-    writeContract({
-      address: currentContractAddress,
-      abi: ORACLE_DUEL_ABI,
-      functionName: 'resolve_duel',
-      args: [BigInt(duelId)],
-      gas: 1_000_000n,
-      gasPrice: 1_000_000_000n,
-    });
+  const handleResolveAI = async (duelId) => {
+    if (!address) return;
+    setTxStatus('pending');
+
+    try {
+      const client = getGenClient(chainId || 4221, address);
+      await client.connect("testnetBradbury");
+
+      const hash = await client.writeContract({
+        address: currentContractAddress,
+        abi: ORACLE_DUEL_ABI,
+        functionName: 'resolve_duel',
+        args: [BigInt(duelId)],
+        leaderOnly: true,
+      });
+
+      setTxHash(hash);
+      await client.waitForTransactionReceipt({ hash, status: 'FINALIZED' });
+      
+      setTxStatus('success');
+      setTimeout(() => setTxStatus(null), 5000);
+      fetchAllData();
+    } catch (err) {
+      console.error("Resolve error:", err);
+      setTxStatus('error');
+    }
   };
 
-  const handleCancelDuel = (duelId) => {
-    writeContract({
-      address: currentContractAddress,
-      abi: ORACLE_DUEL_ABI,
-      functionName: 'cancel_duel',
-      args: [BigInt(duelId)],
-      gas: 500_000n,
-      gasPrice: 1_000_000_000n,
-    });
+  const handleCancelDuel = async (duelId) => {
+    if (!address) return;
+    setTxStatus('pending');
+
+    try {
+      const client = getGenClient(chainId || 4221, address);
+      await client.connect("testnetBradbury");
+
+      const hash = await client.writeContract({
+        address: currentContractAddress,
+        abi: ORACLE_DUEL_ABI,
+        functionName: 'cancel_duel',
+        args: [BigInt(duelId)],
+        leaderOnly: true,
+      });
+
+      setTxHash(hash);
+      await client.waitForTransactionReceipt({ hash, status: 'FINALIZED' });
+      
+      setTxStatus('success');
+      setTimeout(() => setTxStatus(null), 5000);
+      fetchAllData();
+    } catch (err) {
+      console.error("Cancel error:", err);
+      setTxStatus('error');
+    }
   };
 
-  const handleClaimWinnings = (duelId) => {
-    writeContract({
-      address: currentContractAddress,
-      abi: ORACLE_DUEL_ABI,
-      functionName: 'claim_winnings',
-      args: [BigInt(duelId)],
-      gas: 500_000n,
-      gasPrice: 1_000_000_000n,
-    });
+  const handleClaimWinnings = async (duelId) => {
+    if (!address) return;
+    setTxStatus('pending');
+
+    try {
+      const client = getGenClient(chainId || 4221, address);
+      await client.connect("testnetBradbury");
+
+      const hash = await client.writeContract({
+        address: currentContractAddress,
+        abi: ORACLE_DUEL_ABI,
+        functionName: 'claim_winnings',
+        args: [BigInt(duelId)],
+        leaderOnly: true,
+      });
+
+      setTxHash(hash);
+      await client.waitForTransactionReceipt({ hash, status: 'FINALIZED' });
+      
+      setTxStatus('success');
+      setTimeout(() => setTxStatus(null), 5000);
+      fetchAllData();
+    } catch (err) {
+      console.error("Claim error:", err);
+      setTxStatus('error');
+    }
   };
 
   const handleSyncNetwork = async () => {
@@ -175,8 +244,8 @@ const Arena = ({ onBackToHome, onNavigate }) => {
           chainId: '0x107d',
           chainName: 'GenLayer Testnet Chain',
           nativeCurrency: { name: 'GEN', symbol: 'GEN', decimals: 18 },
-          rpcUrls: ['https://zksync-os-testnet-genlayer.zksync.dev'],
-          blockExplorerUrls: ['https://zksync-os-testnet-genlayer.explorer.zksync.dev/'],
+          rpcUrls: ['https://rpc-bradbury.genlayer.com'],
+          blockExplorerUrls: ['https://explorer-bradbury.genlayer.com/'],
         }],
       });
     } catch (e) {

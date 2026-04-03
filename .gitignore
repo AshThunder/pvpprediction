@@ -10,3 +10,9 @@ dist-ssr
 # Python
 __pycache__/
 *.pyc
+
+# GenLayer Temporary
+doc.txt
+deploy_pvp.mjs
+simulate_tx.mjs
+*.mjs.map

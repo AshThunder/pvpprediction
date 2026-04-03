@@ -17,11 +17,11 @@ const bradbury = {
     symbol: 'GEN' 
   },
   rpcUrls: { 
-    default: { http: ['https://zksync-os-testnet-genlayer.zksync.dev'] }, 
-    public: { http: ['https://zksync-os-testnet-genlayer.zksync.dev'] } 
+    default: { http: ['https://rpc-bradbury.genlayer.com'] }, 
+    public: { http: ['https://rpc-bradbury.genlayer.com'] } 
   },
   blockExplorers: { 
-    default: { name: 'GenLayer Explorer', url: 'https://zksync-os-testnet-genlayer.explorer.zksync.dev/' } 
+    default: { name: 'GenLayer Explorer', url: 'https://explorer-bradbury.genlayer.com' } 
   },
   testnet: true,
 };

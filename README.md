@@ -20,11 +20,11 @@
 ## 🛠️ Technology Stack
 
 - **Blockchain**: [GenLayer](https://genlayer.com) (ZKsync-GenLayer Hybrid Testnet)
-- **RPC Endpoint**: `https://zksync-os-testnet-genlayer.zksync.dev`
+- **Official GenLayer RPC**: `https://rpc-bradbury.genlayer.com`
 - **Contract Address**: `0xA08F293AAFb2107477886ed090B72c66a1B3804b`
 - **Contract Folder**: `/contracts` (Skill-Compliant v3.0.0)
 - **Smart Contracts**: Python Intelligent Contracts (GenVM) 
-- **Explorer**: [ZKsync GenLayer Explorer](https://zksync-os-testnet-genlayer.explorer.zksync.dev/)
+- **Official Explorer**: [GenLayer Explorer](https://explorer-bradbury.genlayer.com)
 
 ---
 
