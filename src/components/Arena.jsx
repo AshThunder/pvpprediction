@@ -340,8 +340,11 @@ const Arena = ({ onBackToHome, onNavigate }) => {
           {loading && duels.length === 0 ? (
             <div className="col-span-full py-20 text-center font-black uppercase tracking-widest text-slate-400">Syncing Bradbury Net...</div>
           ) : duels.filter(d => {
-            if (activeTab === 'AVAILABLE') return d.status === 'OPEN' && d.challenger !== address;
-            if (activeTab === 'MY GAMES') return d.challenger === address || d.opponent === address;
+            const addr = address?.toLowerCase();
+            const challenger = d.challenger?.toLowerCase();
+            const opponent = d.opponent?.toLowerCase();
+            if (activeTab === 'AVAILABLE') return d.status === 'OPEN' && challenger !== addr;
+            if (activeTab === 'MY GAMES') return challenger === addr || opponent === addr;
             return true;
           }).map(duel => {
             const config = getStatusConfig(duel.status);
@@ -366,10 +369,10 @@ const Arena = ({ onBackToHome, onNavigate }) => {
                     </div>
                     
                     <div className="flex gap-2">
-                    {duel.status === 'OPEN' && address !== duel.challenger && (
+                    {duel.status === 'OPEN' && address?.toLowerCase() !== duel.challenger?.toLowerCase() && (
                       <button onClick={() => setMatchingDuelId(duel.id)} className="bg-orange-600 text-white font-black px-4 py-2 text-xs uppercase shadow-[2px_2px_0px_0px_#000] hover:shadow-none transition-all">MATCH</button>
                     )}
-                    {duel.status === 'OPEN' && address === duel.challenger && (
+                    {duel.status === 'OPEN' && address?.toLowerCase() === duel.challenger?.toLowerCase() && (
                       <button onClick={() => handleCancelDuel(duel.id)} className="border-2 border-red-600 text-red-600 font-black px-4 py-2 text-xs uppercase flex items-center gap-2 hover:bg-red-50 transition-all">
                         <XCircle size={14} /> CANCEL
                       </button>
@@ -379,7 +382,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
                         <TerminalSquare size={14} /> AI CHECK
                       </button>
                     )}
-                    {duel.status === 'RESOLVED' && duel.winner === address && (
+                    {duel.status === 'RESOLVED' && duel.winner?.toLowerCase() === address?.toLowerCase() && (
                       <button onClick={() => handleClaimWinnings(duel.id)} className="bg-green-600 text-white font-black px-4 py-2 text-xs uppercase flex items-center gap-2 shadow-[2px_2px_0px_0px_#000] hover:shadow-none transition-all">
                         <Trophy size={14} /> CLAIM
                       </button>
