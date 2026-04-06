@@ -104,50 +104,51 @@ class PvPPredictionArena(gl.Contract):
         return json.loads(text)
 
     def _judge_claim(self, claim: str, counter_evidence: str) -> dict:
-        # ── Equivalence Principle: prompt_comparative (SKILL.md §Decision Tree) ──
-        # LLM output is non-deterministic → NEVER use strict_eq.
-        # Using prompt_comparative so validators agree on the "winner" field.
-
-        def get_llm_result() -> str:
+        def leader_fn() -> dict:
             prompt = (
                 "### PVP PREDICTION ARENA // JUDICIAL PROTOCOL ###\n"
-                "You are an impartial, data-driven AI Judge for a high-stakes prediction arena.\n\n"
+                "You are an impartial, data-driven AI Judge.\n\n"
                 f"CHALLENGER PROPOSITION: '{claim}'\n"
                 f"OPPONENT COUNTER-STANCE/CONTEXT: '{counter_evidence}'\n\n"
                 "YOUR MISSION:\n"
-                "1. Independently verify the factual truth of the PROPOSITION using real-time search.\n"
+                "1. Independently verify the factual truth of the PROPOSITION.\n"
                 "2. Analyze the COUNTER-STANCE to see if it invalidates the PROPOSITION.\n"
                 "3. Reach a binary verdict: CHALLENGER wins if the claim is FACTUALLY TRUE. OPPONENT wins if the claim is FALSE or UNPROVABLE.\n\n"
-                "CONSTRAINTS:\n"
-                "- Be extremely pedantic and objective.\n"
-                "- If the event hasn't happened yet, the outcome is UNPROVABLE (Opponent wins).\n\n"
                 "OUTPUT JSON FORMAT (STRICT):\n"
                 "{\n"
                 '  "winner": "CHALLENGER" or "OPPONENT",\n'
-                '  "reasoning": "A concise, factual explanation of the verdict (max 20 words)."\n'
+                '  "reasoning": "A concise explanation"\n'
                 "}"
             )
-            # SKILL.md §Always use response_format="json"
-            result = gl.nondet.exec_prompt(prompt, response_format="json")
-
             try:
+                result = gl.nondet.exec_prompt(prompt, response_format="json")
                 parsed = self._parse_json(str(result))
-                winner = parsed.get("winner", "OPPONENT")
+                winner = str(parsed.get("winner", "OPPONENT")).strip().upper()
                 if winner not in ("CHALLENGER", "OPPONENT"):
                     winner = "OPPONENT"
-                return json.dumps({
+                return {
                     "winner": winner,
-                    "reasoning": str(parsed.get("reasoning", "No reasoning provided."))[:200]
-                }, sort_keys=True, separators=(',', ':'))
-            except Exception:
-                raise gl.UserError(f"{ERROR_LLM} Failed to parse AI verdict")
+                    "reasoning": str(parsed.get("reasoning", "No valid explanation provided."))[:200]
+                }
+            except Exception as e:
+                # Fallback on parsing error
+                return {"winner": "OPPONENT", "reasoning": f"LLM parsing failed: {str(e)}"}
 
-        # SKILL.md §Equivalence Principle: prompt_comparative for LLM calls
-        result_str = gl.eq_principle.prompt_comparative(
-            get_llm_result,
-            principle='"winner" field must be exactly the same. "reasoning" must convey the same conclusion.',
-        )
-        return json.loads(result_str)
+        def validator_fn(leaders_res: gl.vm.Result) -> bool:
+            if not isinstance(leaders_res, gl.vm.Return):
+                # If leader raised an error (unlikely due to try/except, but possible), just disagree
+                return False
+
+            validator_result = leader_fn()
+            
+            # Extract both results
+            leader_winner = leaders_res.calldata.get("winner")
+            validator_winner = validator_result.get("winner")
+            
+            # Consensus strictly requires agreeing on the winner. Reasoning can differ.
+            return leader_winner == validator_winner
+
+        return gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
 
     @gl.public.write
     def resolve_duel(self, duel_id: u256) -> None:
