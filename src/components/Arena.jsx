@@ -67,7 +67,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
     
     const checkRpc = async () => {
       try {
-        const res = await fetch('/rpc', {
+        const res = await fetch('https://rpc-bradbury.genlayer.com', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ jsonrpc: '2.0', method: 'eth_blockNumber', params: [], id: 1 })
