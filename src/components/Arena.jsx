@@ -109,7 +109,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
       });
 
       setTxHash(hash);
-      await client.waitForTransactionReceipt({ hash, status: 'ACCEPTED' });
+      await client.waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 3000, retries: 240 });
       
       setTxStatus('success');
       setTimeout(() => setTxStatus(null), 5000);
@@ -138,7 +138,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
       });
 
       setTxHash(hash);
-      await client.waitForTransactionReceipt({ hash, status: 'ACCEPTED' });
+      await client.waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 3000, retries: 240 });
       
       setTxStatus('success');
       setTimeout(() => setTxStatus(null), 5000);
@@ -165,7 +165,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
       });
 
       setTxHash(hash);
-      await client.waitForTransactionReceipt({ hash, status: 'ACCEPTED' });
+      await client.waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 3000, retries: 240 });
       
       setTxStatus('success');
       setTimeout(() => setTxStatus(null), 5000);
@@ -192,7 +192,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
       });
 
       setTxHash(hash);
-      await client.waitForTransactionReceipt({ hash, status: 'ACCEPTED' });
+      await client.waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 3000, retries: 240 });
       
       setTxStatus('success');
       setTimeout(() => setTxStatus(null), 5000);
@@ -219,7 +219,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
       });
 
       setTxHash(hash);
-      await client.waitForTransactionReceipt({ hash, status: 'ACCEPTED' });
+      await client.waitForTransactionReceipt({ hash, status: 'ACCEPTED', interval: 3000, retries: 240 });
       
       setTxStatus('success');
       setTimeout(() => setTxStatus(null), 5000);
@@ -313,12 +313,25 @@ const Arena = ({ onBackToHome, onNavigate }) => {
 
         <AnimatePresence>
           {txStatus && (
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className={`mb-8 p-4 border-2 border-slate-900 font-black uppercase tracking-widest flex items-center justify-between ${txStatus === 'success' ? 'bg-green-100' : txStatus === 'pending' ? 'bg-blue-100' : 'bg-red-100'}`}>
-              <div className="flex items-center gap-3">
-                {txStatus === 'pending' ? <TerminalSquare className="animate-pulse" /> : txStatus === 'success' ? <Trophy /> : <AlertCircle />}
-                {txStatus === 'pending' ? 'Awaiting Oracle Confirmation...' : txStatus === 'success' ? 'Telemetry Verified. Action Complete.' : 'Critical Error: Action Aborted.'}
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className={`mb-8 p-4 flex flex-col gap-3 font-black uppercase tracking-widest ${txStatus === 'success' ? 'bg-green-100 text-green-900 border-2 border-green-900' : txStatus === 'pending' ? 'bg-blue-100 text-blue-900 border-2 border-blue-900' : 'bg-red-100 text-red-900 border-2 border-red-900'}`}>
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-3">
+                  {txStatus === 'pending' ? <TerminalSquare className="animate-pulse" /> : txStatus === 'success' ? <Trophy /> : <AlertCircle />}
+                  <span>
+                    {txStatus === 'pending' ? 'Processing on GenLayer... (Leader Consensus may take up to 12 mins)' : txStatus === 'success' ? 'Telemetry Verified. Action Complete.' : 'Transaction Leader Timeout or Error. Please try again later.'}
+                  </span>
+                </div>
+                <button onClick={() => setTxStatus(null)} className="text-xs tracking-widest underline flex-shrink-0 ml-4 hover:opacity-70 transition-opacity">DISMISS</button>
               </div>
-              <button onClick={() => setTxStatus(null)} className="text-xs underline">DISMISS</button>
+              
+              {txHash && (
+                <div className={`mt-1 pt-3 border-t-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs opacity-90 ${txStatus === 'success' ? 'border-green-900/20' : txStatus === 'pending' ? 'border-blue-900/20' : 'border-red-900/20'}`}>
+                  <span className="font-mono break-all truncate mr-2" title={txHash}>TX: {txHash}</span>
+                  <a href={`https://explorer-bradbury.genlayer.com/transactions/${txHash}`} target="_blank" rel="noreferrer" className="underline whitespace-nowrap bg-black text-white px-3 py-1.5 hover:bg-slate-800 transition-colors flex-shrink-0 inline-flex items-center gap-2">
+                    VIEW ON EXPLORER ↗
+                  </a>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
