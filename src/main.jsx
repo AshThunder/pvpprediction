@@ -28,7 +28,7 @@ const bradbury = {
 
 const config = getDefaultConfig({
   appName: 'Oracle Duel',
-  projectId: '072044806a646a788e6378900c8b6a12', // Placeholder RainbowKit Project ID
+  projectId: 'c404db5ce83332c4e9315bf8be24c350', // Updated RainbowKit Project ID
   chains: [bradbury],
   ssr: false, 
 });
