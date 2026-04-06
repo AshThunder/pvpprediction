@@ -5,7 +5,7 @@ import { Swords, Info, Trophy, AlertCircle, PlusCircle, TerminalSquare, XCircle,
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseEther, formatEther } from 'viem';
 import { CONTRACT_ADDRESSES, getGenClient } from '../services/genlayer';
-import { ORACLE_DUEL_ABI } from '../services/abi';
+
 
 const Arena = ({ onBackToHome, onNavigate }) => {
   const { address, isConnected, chainId } = useAccount();
@@ -30,7 +30,6 @@ const Arena = ({ onBackToHome, onNavigate }) => {
       const client = getGenClient(chainId || 4221, address);
       const countBig = await client.readContract({
         address: currentContractAddress,
-        abi: ORACLE_DUEL_ABI,
         functionName: 'get_next_duel_id',
       });
       
@@ -43,8 +42,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
         try {
           const duel = await client.readContract({
             address: currentContractAddress,
-            abi: ORACLE_DUEL_ABI,
-            functionName: 'get_duel',
+                functionName: 'get_duel',
             args: [BigInt(i)],
           });
           if (duel && duel.challenger !== '0x0000000000000000000000000000000000000000') {
@@ -104,7 +102,6 @@ const Arena = ({ onBackToHome, onNavigate }) => {
 
       const hash = await client.writeContract({
         address: currentContractAddress,
-        abi: ORACLE_DUEL_ABI,
         functionName: 'create_duel',
         args: [newClaim],
         value: parseEther(newStake),
@@ -134,7 +131,6 @@ const Arena = ({ onBackToHome, onNavigate }) => {
 
       const hash = await client.writeContract({
         address: currentContractAddress,
-        abi: ORACLE_DUEL_ABI,
         functionName: 'match_duel',
         args: [BigInt(duelId), evidence || ""],
         value: BigInt(stake),
@@ -163,7 +159,6 @@ const Arena = ({ onBackToHome, onNavigate }) => {
 
       const hash = await client.writeContract({
         address: currentContractAddress,
-        abi: ORACLE_DUEL_ABI,
         functionName: 'resolve_duel',
         args: [BigInt(duelId)],
         leaderOnly: true,
@@ -191,7 +186,6 @@ const Arena = ({ onBackToHome, onNavigate }) => {
 
       const hash = await client.writeContract({
         address: currentContractAddress,
-        abi: ORACLE_DUEL_ABI,
         functionName: 'cancel_duel',
         args: [BigInt(duelId)],
         leaderOnly: true,
@@ -219,7 +213,6 @@ const Arena = ({ onBackToHome, onNavigate }) => {
 
       const hash = await client.writeContract({
         address: currentContractAddress,
-        abi: ORACLE_DUEL_ABI,
         functionName: 'claim_winnings',
         args: [BigInt(duelId)],
         leaderOnly: true,
