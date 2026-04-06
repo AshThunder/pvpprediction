@@ -327,7 +327,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
               {txHash && (
                 <div className={`mt-1 pt-3 border-t-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs opacity-90 ${txStatus === 'success' ? 'border-green-900/20' : txStatus === 'pending' ? 'border-blue-900/20' : 'border-red-900/20'}`}>
                   <span className="font-mono break-all truncate mr-2" title={txHash}>TX: {txHash}</span>
-                  <a href={`https://explorer-bradbury.genlayer.com/transactions/${txHash}`} target="_blank" rel="noreferrer" className="underline whitespace-nowrap bg-black text-white px-3 py-1.5 hover:bg-slate-800 transition-colors flex-shrink-0 inline-flex items-center gap-2">
+                  <a href={`https://explorer-bradbury.genlayer.com/tx/${txHash}`} target="_blank" rel="noreferrer" className="underline whitespace-nowrap bg-black text-white px-3 py-1.5 hover:bg-slate-800 transition-colors flex-shrink-0 inline-flex items-center gap-2">
                     VIEW ON EXPLORER ↗
                   </a>
                 </div>
