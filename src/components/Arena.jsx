@@ -112,7 +112,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
       });
 
       setTxHash(hash);
-      await client.waitForTransactionReceipt({ hash, status: 'FINALIZED' });
+      await client.waitForTransactionReceipt({ hash, status: 'ACCEPTED' });
       
       setTxStatus('success');
       setTimeout(() => setTxStatus(null), 5000);
@@ -142,7 +142,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
       });
 
       setTxHash(hash);
-      await client.waitForTransactionReceipt({ hash, status: 'FINALIZED' });
+      await client.waitForTransactionReceipt({ hash, status: 'ACCEPTED' });
       
       setTxStatus('success');
       setTimeout(() => setTxStatus(null), 5000);
@@ -170,7 +170,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
       });
 
       setTxHash(hash);
-      await client.waitForTransactionReceipt({ hash, status: 'FINALIZED' });
+      await client.waitForTransactionReceipt({ hash, status: 'ACCEPTED' });
       
       setTxStatus('success');
       setTimeout(() => setTxStatus(null), 5000);
@@ -198,7 +198,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
       });
 
       setTxHash(hash);
-      await client.waitForTransactionReceipt({ hash, status: 'FINALIZED' });
+      await client.waitForTransactionReceipt({ hash, status: 'ACCEPTED' });
       
       setTxStatus('success');
       setTimeout(() => setTxStatus(null), 5000);
@@ -226,7 +226,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
       });
 
       setTxHash(hash);
-      await client.waitForTransactionReceipt({ hash, status: 'FINALIZED' });
+      await client.waitForTransactionReceipt({ hash, status: 'ACCEPTED' });
       
       setTxStatus('success');
       setTimeout(() => setTxStatus(null), 5000);
