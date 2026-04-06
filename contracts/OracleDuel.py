@@ -88,8 +88,9 @@ class PvPPredictionArena(gl.Contract):
         duel.status = "CANCELLED"
         self.duels[duel_id] = duel
 
-        # Refund the challenger
-        duel.challenger.transfer(duel.stake)
+        # Refund the challenger using GenVM emit_transfer
+        target = gl.get_contract_at(duel.challenger)
+        target.emit_transfer(value=duel.stake)
 
     # ── LLM Resilience (SKILL.md §LLM Resilience) ──
     @staticmethod
@@ -188,7 +189,8 @@ class PvPPredictionArena(gl.Contract):
         self.duels[duel_id] = duel
 
         self.collected_fees += fee
-        duel.winner.transfer(winnings)
+        target = gl.get_contract_at(duel.winner)
+        target.emit_transfer(value=winnings)
 
     @gl.public.write
     def withdraw_fees(self) -> None:
@@ -197,7 +199,8 @@ class PvPPredictionArena(gl.Contract):
 
         amount = self.collected_fees
         self.collected_fees = u256(0)
-        self.owner.transfer(amount)
+        target = gl.get_contract_at(self.owner)
+        target.emit_transfer(value=amount)
 
     @gl.public.view
     def get_duel(self, duel_id: u256) -> Duel:
