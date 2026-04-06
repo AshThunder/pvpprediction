@@ -24,10 +24,11 @@ const Arena = ({ onBackToHome, onNavigate }) => {
 
   // Fetch duels from contract via genlayer-js
   const fetchAllData = async () => {
-    if (!currentContractAddress || !publicClient) return;
+    if (!currentContractAddress) return;
     setLoading(true);
     try {
-      const countBig = await publicClient.readContract({
+      const client = getGenClient(chainId || 4221, address);
+      const countBig = await client.readContract({
         address: currentContractAddress,
         abi: ORACLE_DUEL_ABI,
         functionName: 'get_next_duel_id',
@@ -40,7 +41,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
       // IDs are 1-based
       for (let i = 1; i < count; i++) {
         try {
-          const duel = await publicClient.readContract({
+          const duel = await client.readContract({
             address: currentContractAddress,
             abi: ORACLE_DUEL_ABI,
             functionName: 'get_duel',
