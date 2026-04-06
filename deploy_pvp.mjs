@@ -8,7 +8,7 @@ dotenv.config();
 
 const RPC_URL = process.argv.includes('--rpc') 
   ? process.argv[process.argv.indexOf('--rpc') + 1] 
-  : 'https://zksync-os-testnet-genlayer.zksync.dev';
+  : 'https://rpc-bradbury.genlayer.com';
 
 const account = privateKeyToAccount(`0x${process.env.PRIVATE_KEY}`);
 
@@ -35,14 +35,12 @@ async function deploy() {
       code: contractCode,
       args: [],
       leaderOnly: true,
-      gas: 5_000_000n,
-      gasPrice: 1_000_000_000n,
     });
 
     console.log(`✅ Deployment initiated! Hash: ${hash}`);
     console.log(`⏳ Waiting for confirmation...`);
 
-    const receipt = await client.waitForTransactionReceipt({ hash });
+    const receipt = await client.waitForTransactionReceipt({ hash, status: 'FINALIZED' });
     console.log(`✨ Contract deployed at: ${receipt.contractAddress}`);
     
     // Save to a file for the frontend

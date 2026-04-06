@@ -2,7 +2,7 @@ import { createClient } from 'genlayer-js';
 import { testnetBradbury } from 'genlayer-js/chains';
 
 export const CONTRACT_ADDRESSES = {
-  4221: '0xA08F293AAFb2107477886ed090B72c66a1B3804b', // Bradbury Testnet (PvPPredictionArena v3.0.0)
+  4221: '0x6421C3e431BfF70B8A3d88811Cc881e229a04F0E', // Bradbury Testnet (PvPPredictionArena v3.0.0 - Redeployed Apr 6)
 };
 
 export const getGenClient = (chainId, account) => {
