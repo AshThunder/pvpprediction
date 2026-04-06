@@ -90,6 +90,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
   const [newStake, setNewStake] = useState('10');
   const [txStatus, setTxStatus] = useState(null); 
   const [txHash, setTxHash] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   const handleCreateDuel = async () => {
     if (!newClaim || !newStake || !address) return;
