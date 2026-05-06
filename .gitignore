@@ -8,11 +8,18 @@ dist-ssr
 .env
 
 # Python
+.venv/
 __pycache__/
 *.pyc
 
 # GenLayer Temporary
 doc.txt
-deploy_pvp.mjs
 simulate_tx.mjs
 *.mjs.map
+.test_wallet_b.json
+check_*.mjs
+test_create.mjs
+test_resolve.mjs
+debug_contract.mjs
+fetch_tx.mjs
+recover_deploy.mjs

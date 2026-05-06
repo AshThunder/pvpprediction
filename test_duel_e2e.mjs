@@ -7,7 +7,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const RPC_URL = 'https://rpc-bradbury.genlayer.com';
-const CONTRACT = '0x275371844972BF7CcA2c17E40E320b098b881a0C';
+import { CONTRACT_ADDRESS } from './src/services/contract_address.js';
+const CONTRACT = CONTRACT_ADDRESS;
 
 // We will use the same wallet for both roles since the SDK's sendTransaction 
 // (for raw GEN transfers) currently fails with eth_fillTransaction on the Bradbury node.
@@ -29,7 +30,7 @@ function makeClient(account) {
 }
 
 // Manual polling
-async function waitForReceipt(client, hash, maxRetries = 60, intervalMs = 5000) {
+async function waitForReceipt(client, hash, maxRetries = 60, intervalMs = 12000) {
   for (let i = 0; i < maxRetries; i++) {
     try {
       const receipt = await client.getTransactionReceipt({ hash });
@@ -67,9 +68,8 @@ async function main() {
       account: walletA,
       address: CONTRACT,
       functionName: 'create_duel',
-      args: [CLAIM],
+      args: [CLAIM, "", 1n], // 1s deadline for fast testing
       value: STAKE,
-      leaderOnly: true,
     });
     console.log(`   ✅ TX submitted: ${createHash}`);
     process.stdout.write('   ⏳ Polling ');
@@ -106,7 +106,6 @@ async function main() {
       functionName: 'match_duel',
       args: [BigInt(duelId), 'I disagree, 2 times 2 is actually 5'],
       value: STAKE, // 1 GEN
-      leaderOnly: true,
     });
     console.log(`   ✅ TX submitted: ${matchHash}`);
     process.stdout.write('   ⏳ Polling ');
@@ -141,7 +140,6 @@ async function main() {
       address: CONTRACT,
       functionName: 'resolve_duel',
       args: [BigInt(duelId)],
-      leaderOnly: true,
     });
     console.log(`   ✅ TX submitted: ${resolveHash}`);
     process.stdout.write('   ⏳ Polling ');

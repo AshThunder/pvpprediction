@@ -5,7 +5,17 @@
   "description": "PVP Prediction Arena on GenLayer",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "deploy": "node deploy_pvp.mjs",
+    "deploy:no-leader": "node deploy_pvp.mjs --no-leader-only",
+    "deploy:local": "node scripts/deploy_local.mjs",
+    "inspect-tx": "node scripts/inspect_genlayer_tx.mjs",
+    "recover-deploy": "node recover_deploy.mjs",
+    "complete-deploy": "node scripts/complete_deploy.mjs",
+    "tx-status": "node scripts/tx_status.mjs",
+    "try-all": "node scripts/try_all_deploy.mjs",
+    "lint:contract": "genvm-lint lint contracts/OracleDuel.py",
+    "validate:contract": "genvm-lint validate contracts/OracleDuel.py"
   },
   "devDependencies": {
     "@rainbow-me/rainbowkit": "^2.2.10",

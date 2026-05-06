@@ -19,12 +19,17 @@
 
 ## 🛠️ Technology Stack
 
-- **Blockchain**: [GenLayer](https://genlayer.com) (ZKsync-GenLayer Hybrid Testnet)
-- **Official GenLayer RPC**: `https://rpc-bradbury.genlayer.com`
-- **Contract Address**: `0xA08F293AAFb2107477886ed090B72c66a1B3804b`
-- **Contract Folder**: `/contracts` (Skill-Compliant v3.0.0)
-- **Smart Contracts**: Python Intelligent Contracts (GenVM) 
-- **Official Explorer**: [GenLayer Explorer](https://explorer-bradbury.genlayer.com)
+- **Blockchain**: [GenLayer](https://genlayer.com) — intelligent contracts on [Testnet Bradbury](https://docs.genlayer.com/developers/networks)
+- **GenLayer RPC** (wallet + `gen_*` + forwarded `eth_*`): `https://rpc-bradbury.genlayer.com`
+- **GenLayer Chain RPC** (underlying zkSync L2, same chain id): `https://rpc.testnet-chain.genlayer.com`
+- **Chain ID**: `4221` · **Currency**: GEN · **Explorer**: [explorer-bradbury.genlayer.com](https://explorer-bradbury.genlayer.com) · **Faucet**: [testnet-faucet.genlayer.foundation](https://testnet-faucet.genlayer.foundation)
+- **Deployed contract address**: `src/services/contract_address.js` (run `npm run deploy` to deploy and overwrite)
+- **Contract source**: `/contracts` (Python / GenVM)
+- **Smart Contracts**: Intelligent Contracts ([docs](https://docs.genlayer.com/developers/intelligent-contracts/introduction))
+
+See **`docs/GENLAYER_BRADBURY.md`** in this repo for Bradbury architecture, RPC behavior, and troubleshooting.
+
+**Cursor:** GenLayer skills marketplace + `.cursor/rules` setup → **`docs/CURSOR_GENLAYER.md`** ([skills.genlayer.com](http://skills.genlayer.com/)).
 
 ---
 
@@ -69,6 +74,14 @@ The AI Judge uses a pedantic judicial prompt designed to verify real-world factu
 ---
 
 ## 📡 Deployment
+
+### Contract (Bradbury)
+
+```bash
+npm run deploy              # deploy OracleDuel.py → writes src/services/contract_address.js
+```
+
+If deploy stalls or RPC errors appear after the GenLayer tx id is printed, use **`docs/GENLAYER_BRADBURY.md`** — in short: `npm run complete-deploy -- 0x<genlayer_tx_id>` or `npm run recover-deploy -- 0x<evm_tx_hash>`.
 
 ### GitHub
 The repository is initialized and ready for a remote push. 
