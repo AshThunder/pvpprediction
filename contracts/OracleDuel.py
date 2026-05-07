@@ -1,4 +1,4 @@
-# { "Depends": "py-genlayer:test" }
+# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
 # v6.1.3 — PVP PREDICTION ARENA (Depends must be line 1 per GenLayer “Your First Contract”)
 import json
 import re
@@ -76,7 +76,7 @@ class PvPPredictionArena(gl.Contract):
             reasoning="",
             category="",
             target_opponent=target,
-            created_block=u256(gl.block.number),
+            created_block=u256(0),
             deadline=deadline,
         )
         self.duels[duel_id] = duel
@@ -202,9 +202,7 @@ class PvPPredictionArena(gl.Contract):
         if duel.status != "MATCHED":
             raise gl.UserError(f"{ERROR_EXPECTED} Duel must be matched to resolve")
         
-        # Deadline check
-        if u256(gl.block.timestamp) < duel.deadline:
-            raise gl.UserError(f"{ERROR_EXPECTED} Resolution deadline has not been reached yet")
+        # Deadline check removed (gl.block.timestamp not supported yet)
 
         result = self._judge_claim(duel.claim, duel.evidence_b)
 

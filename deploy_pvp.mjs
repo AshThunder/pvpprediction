@@ -1,5 +1,5 @@
 import { createClient } from 'genlayer-js';
-import { testnetBradbury } from 'genlayer-js/chains';
+import { testnetBradbury, studionet } from 'genlayer-js/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import { createPublicClient, http, parseEventLogs } from 'viem';
 import { waitForTransactionReceipt } from 'viem/actions';
@@ -13,14 +13,24 @@ import { writeContractAddressFile } from './scripts/finalize_deploy_core.mjs';
 
 dotenv.config();
 
+const NETWORK_CONFIGS = {
+  bradbury: { chain: testnetBradbury, rpc: 'https://rpc-bradbury.genlayer.com' },
+  studionet: { chain: studionet, rpc: 'https://studio.genlayer.com/api' },
+};
+
+const networkName = process.argv.includes('--network')
+  ? process.argv[process.argv.indexOf('--network') + 1]
+  : 'bradbury';
+const networkConfig = NETWORK_CONFIGS[networkName] || NETWORK_CONFIGS.bradbury;
+
 const RPC_URL = process.argv.includes('--rpc')
   ? process.argv[process.argv.indexOf('--rpc') + 1]
-  : 'https://rpc-bradbury.genlayer.com';
+  : networkConfig.rpc;
 /** Default true (Bradbury). If deploys get txExecutionResult=2 and no callable contract, try `node deploy_pvp.mjs --no-leader-only`. */
 const DEPLOY_LEADER_ONLY = !process.argv.includes('--no-leader-only');
 
 const chain = {
-  ...testnetBradbury,
+  ...networkConfig.chain,
   rpcUrls: {
     default: { http: [RPC_URL] },
     public: { http: [RPC_URL] },

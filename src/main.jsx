@@ -8,20 +8,20 @@ import { getDefaultConfig, RainbowKitProvider, darkTheme } from '@rainbow-me/rai
 import { WagmiProvider } from 'wagmi';
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 
-const bradbury = {
-  id: 4221,
-  name: 'GenLayer Testnet Chain',
+const studioChain = {
+  id: 61999,
+  name: 'GenLayer Studio',
   nativeCurrency: { 
     decimals: 18, 
     name: 'GEN Token', 
     symbol: 'GEN' 
   },
   rpcUrls: { 
-    default: { http: ['https://rpc-bradbury.genlayer.com'] }, 
-    public: { http: ['https://rpc-bradbury.genlayer.com'] } 
+    default: { http: ['https://studio.genlayer.com/api'] }, 
+    public: { http: ['https://studio.genlayer.com/api'] } 
   },
   blockExplorers: { 
-    default: { name: 'GenLayer Explorer', url: 'https://explorer-bradbury.genlayer.com' } 
+    default: { name: 'GenLayer Studio Explorer', url: 'https://explorer-studio.genlayer.com' } 
   },
   testnet: true,
 };
@@ -29,7 +29,7 @@ const bradbury = {
 const config = getDefaultConfig({
   appName: 'Oracle Duel',
   projectId: 'c404db5ce83332c4e9315bf8be24c350', // Updated RainbowKit Project ID
-  chains: [bradbury],
+  chains: [studioChain],
   ssr: false, 
 });
 

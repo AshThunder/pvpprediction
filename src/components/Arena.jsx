@@ -125,7 +125,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
     
     const checkRpc = async () => {
       try {
-        const res = await fetch('https://rpc-bradbury.genlayer.com', {
+        const res = await fetch('https://studio.genlayer.com/api', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ jsonrpc: '2.0', method: 'eth_blockNumber', params: [], id: 1 })
@@ -509,11 +509,11 @@ const Arena = ({ onBackToHome, onNavigate }) => {
       await window.ethereum.request({
         method: 'wallet_addEthereumChain',
         params: [{
-          chainId: '0x107d',
-          chainName: 'GenLayer Testnet Chain',
+          chainId: '0xf21f',
+          chainName: 'GenLayer Studio',
           nativeCurrency: { name: 'GEN', symbol: 'GEN', decimals: 18 },
-          rpcUrls: ['https://rpc-bradbury.genlayer.com'],
-          blockExplorerUrls: ['https://explorer-bradbury.genlayer.com/'],
+          rpcUrls: ['https://studio.genlayer.com/api'],
+          blockExplorerUrls: ['https://explorer-studio.genlayer.com/'],
         }],
       });
     } catch (e) {

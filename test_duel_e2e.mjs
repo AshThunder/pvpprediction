@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const RPC_URL = 'https://rpc-bradbury.genlayer.com';
+const RPC_URL = 'https://studio.genlayer.com/api';
 import { CONTRACT_ADDRESS } from './src/services/contract_address.js';
 const CONTRACT = CONTRACT_ADDRESS;
 
