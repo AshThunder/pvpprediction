@@ -1,106 +1,162 @@
-# PVP PREDICTION ARENA ⚡️
+# ⚔️ PVP PREDICTION ARENA
 
 ![Branding](public/hero.png)
 
-> **PREDICT. PLAY. WIN.**
-> A decentralized, high-fidelity PvP prediction market powered by GenLayer's Intelligent Contracts.
+> **PREDICT. STAKE. WIN.**
+> A decentralized PvP prediction market powered by GenLayer's Intelligent Contracts and AI-driven resolution.
 
 ---
 
-## 🏛️ The Vision
+## 🏛️ Overview
 
-**PVP PREDICTION ARENA** is the next evolution of social prediction markets. By leveraging GenLayer's Intelligent Contracts, we've eliminated the "house," the middlemen, and the ambiguity of manual settlement. Every game is a direct battle between players, with outcomes verified by a decentralized AI consensus.
+**PVP Prediction Arena** is a fee-free, peer-to-peer prediction market where players stake GEN tokens on factual claims. A decentralized AI consensus network judges each duel — no middlemen, no house edge, no manual settlement.
 
-- **100% Fair**: Results are machine-verifiable and cross-referenced by multiple AI models.
-- **Direct Payouts**: Immutable smart contracts handle token distribution immediately upon event finalization.
-- **Cyber-Industrial Aesthetic**: A neobrutalist interface designed for professional operators and casual players alike.
+- **100% Fair** — Results are machine-verified by multiple AI validator nodes reaching consensus.
+- **Fee-Free** — Winners receive the entire pot. Zero platform fees.
+- **Dual-Network** — Live on both GenLayer **StudioNet** and **Bradbury** testnets.
+- **Instant or Timed** — Duels can resolve immediately (for current facts) or after a deadline (for future predictions).
+
+---
+
+## 🌐 Live Deployments
+
+| Network | Chain ID | Contract Address | Explorer |
+|---------|----------|-----------------|----------|
+| **StudioNet** | `61999` | `0xaa9a0916a0795ae7105c5577c458591811104424` | [studio.genlayer.com](https://studio.genlayer.com) |
+| **Bradbury** | `4221` | `0xD6243C1b01826e6E3f05e03C00624f960F594868` | [explorer-bradbury.genlayer.com](https://explorer-bradbury.genlayer.com) |
+
+Contract addresses are configured in [`src/services/contract_address.js`](src/services/contract_address.js).
 
 ---
 
 ## 🛠️ Technology Stack
 
-- **Blockchain**: [GenLayer](https://genlayer.com) — intelligent contracts on [Testnet Bradbury](https://docs.genlayer.com/developers/networks)
-- **GenLayer RPC** (wallet + `gen_*` + forwarded `eth_*`): `https://rpc-bradbury.genlayer.com`
-- **GenLayer Chain RPC** (underlying zkSync L2, same chain id): `https://rpc.testnet-chain.genlayer.com`
-- **Chain ID**: `4221` · **Currency**: GEN · **Explorer**: [explorer-bradbury.genlayer.com](https://explorer-bradbury.genlayer.com) · **Faucet**: [testnet-faucet.genlayer.foundation](https://testnet-faucet.genlayer.foundation)
-- **Deployed contract address**: `src/services/contract_address.js` (run `npm run deploy` to deploy and overwrite)
-- **Contract source**: `/contracts` (Python / GenVM)
-- **Smart Contracts**: Intelligent Contracts ([docs](https://docs.genlayer.com/developers/intelligent-contracts/introduction))
+| Layer | Technology |
+|-------|-----------|
+| **Blockchain** | [GenLayer](https://genlayer.com) — Intelligent Contracts with built-in LLM execution |
+| **Contract** | `contracts/OracleDuel.py` — GenVM v4, fee-free PvP with AI judge |
+| **Frontend** | React + Vite, Framer Motion, Lucide icons |
+| **Wallet** | RainbowKit + wagmi (MetaMask, WalletConnect, etc.) |
+| **RPC** | `genlayer-js` SDK for `gen_call` / `gen_getTransactionByHash` |
+| **Styling** | Neobrutalist design system with Space Grotesk + Inter |
 
-See **`docs/GENLAYER_BRADBURY.md`** in this repo for Bradbury architecture, RPC behavior, and troubleshooting.
-
-**Cursor:** GenLayer skills marketplace + `.cursor/rules` setup → **`docs/CURSOR_GENLAYER.md`** ([skills.genlayer.com](http://skills.genlayer.com/)).
+### Network RPCs
+- **StudioNet**: `https://studio.genlayer.com/api`
+- **Bradbury**: `https://rpc-bradbury.genlayer.com`
+- **Chain RPC** (underlying zkSync L2): `https://rpc.testnet-chain.genlayer.com`
+- **Faucet**: [testnet-faucet.genlayer.foundation](https://testnet-faucet.genlayer.foundation)
 
 ---
 
-## 🏗️ Technical Architecture
+## 🏗️ Architecture
 
-### 1. Intelligent Contract v3.0.0
-The arena core is a **GenLayer Skill-Compliant (v3.0.0)** Intelligent Contract. It implements authoritative safety patterns:
-- **Equivalence Principle**: Uses `gl.eq_principle.prompt_comparative` to ensure validator consensus on non-deterministic LLM outputs.
-- **LLM Resilience**: Enforces `response_format="json"` and utilizes robust regex-based JSON cleaning to handle varied LLM responses.
-- **Error Classing**: Replaces standard exceptions with `gl.UserError`, using `[EXPECTED]` and `[LLM_ERROR]` prefixes for semantic clarity.
+### Intelligent Contract (`OracleDuel.py`)
+The arena core is a **GenVM v4** Intelligent Contract implementing:
 
+- **Fee-Free Payouts** — 100% of the staked pot goes to the winner.
+- **AI Judge Protocol** — Uses `gl.nondet.exec_prompt()` with a pedantic judicial prompt that independently verifies factual claims against real-world data.
+- **Validator Consensus** — `gl.vm.run_nondet_unsafe()` with a `validator_fn` that cross-checks the leader's verdict, ensuring multi-node agreement on winner determination.
+- **1000-Character Reasoning** — The AI generates rich, sports-broadcaster-style commentary explaining each verdict.
+- **Full Lifecycle** — `create_duel` → `match_duel` → `resolve_duel` (AI) → `claim_winnings`, with cancel/expire support.
 
-### 2. Judicial AI Protocol
-The AI Judge uses a pedantic judicial prompt designed to verify real-world factual propositions through real-time search. It adheres to binary verdicts ("CHALLENGER" or "OPPONENT") to minimize ambiguity and ensure fair payouts.
+### Frontend
+- **Network Detection** — Automatically detects unsupported chains and triggers wallet `switchChain()` to StudioNet or Bradbury.
+- **RPC Resilience** — Intelligent backoff and retry when GenLayer RPC returns "Server busy" or rate-limit errors.
+- **Transaction Journey** — Real-time 5-step progress tracker showing submission → activation → proposal → voting → finalization.
+- **Leaderboard** — On-chain win/loss stats aggregated from resolved duels.
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- [Node.js](https://nodejs.org) (v18+)
-- [MetaMask](https://metamask.io) (Configured for GenLayer Bradbury Testnet)
-- [GenLayer CLI](https://docs.genlayer.com) (For contract interaction/deployment)
+- [Node.js](https://nodejs.org) v18+
+- [MetaMask](https://metamask.io) configured for GenLayer (StudioNet or Bradbury)
+- [GenLayer CLI](https://docs.genlayer.com) (optional, for contract deployment)
 
 ### Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-username/pvp-prediction-arena.git
-   cd pvp-prediction-arena
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Set up environment variables:
-   Create a `.env` file in the root based on the provided configuration for your contract addresses.
-4. Run the development server:
-   ```bash
-   npm run dev
-   ```
+```bash
+git clone https://github.com/AshThunder/pvpprediction.git
+cd pvpprediction
+npm install
+```
+
+### Run Development Server
+```bash
+npm run dev
+```
+Opens at `http://localhost:5173`. Connect your wallet to StudioNet (`61999`) or Bradbury (`4221`).
 
 ---
 
 ## 📡 Deployment
 
-### Contract (Bradbury)
-
+### Contract Deployment
 ```bash
-npm run deploy              # deploy OracleDuel.py → writes src/services/contract_address.js
+# Deploy to StudioNet (default)
+genlayer contracts deploy contracts/OracleDuel.py --password deploy123
+
+# Deploy to Bradbury
+genlayer network set bradbury
+genlayer contracts deploy contracts/OracleDuel.py --password deploy123
 ```
 
-If deploy stalls or RPC errors appear after the GenLayer tx id is printed, use **`docs/GENLAYER_BRADBURY.md`** — in short: `npm run complete-deploy -- 0x<genlayer_tx_id>` or `npm run recover-deploy -- 0x<evm_tx_hash>`.
+Update `src/services/contract_address.js` with the new contract address after deployment.
 
-### GitHub
-The repository is initialized and ready for a remote push. 
-1. Link your remote: `git remote add origin YOUR_URL`
-2. Push: `git push -u origin main`
+### E2E Simulation
+Run the full duel lifecycle test across both networks:
+```bash
+node simulate_duels.js
+```
+This creates duels, matches them, triggers AI resolution, and claims winnings — verifying the entire flow end-to-end.
 
 ### Vercel
-The project includes a `vercel.json` for seamless SPA routing.
-- Simply connect your GitHub repository to Vercel.
-- The build command is `npm run build` and the output directory is `dist`.
+The project includes `vercel.json` for seamless SPA routing.
+- Connect your GitHub repository to Vercel.
+- Build command: `npm run build` · Output directory: `dist`
 
 ---
 
-## ⚖️ Game Rules
+## ⚖️ How It Works
 
-1. **Enter the Arena**: Select or create a game with a specific prediction.
-2. **Bet GEN**: Lock your stake against another player.
-3. **Verify Result**: Once the event concludes, any player can trigger the **AI Check**.
-4. **Win Big**: The winner receives the combined stake automatically.
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  1. CREATE   │───▶│  2. MATCH    │───▶│  3. RESOLVE  │───▶│  4. CLAIM    │
+│  Stake GEN   │    │  Counter it  │    │  AI judges   │    │  Winner paid │
+│  on a claim  │    │  with facts  │    │  the facts   │    │  full pot    │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+```
+
+1. **Create a Duel** — Post a verifiable claim and stake GEN tokens. Set an instant or timed deadline.
+2. **Match the Duel** — An opponent stakes the same amount with their counter-evidence.
+3. **AI Resolution** — Anyone can trigger the AI Check once the deadline passes. GenLayer's decentralized AI network evaluates the claim using real-world knowledge, producing a binary verdict with entertaining commentary.
+4. **Claim Winnings** — The winner collects the entire pot. No fees deducted.
+
+---
+
+## 📂 Project Structure
+
+```
+pvpprediction/
+├── contracts/
+│   └── OracleDuel.py          # GenVM v4 Intelligent Contract
+├── src/
+│   ├── components/
+│   │   ├── Arena.jsx           # Main game board (duels, actions, leaderboard)
+│   │   ├── Home.jsx            # Landing page
+│   │   ├── About.jsx           # How-it-works page
+│   │   ├── Avatar.jsx          # Deterministic wallet avatars
+│   │   ├── ActivityFeed.jsx    # Live event ticker
+│   │   └── Toast.jsx           # Notification system
+│   ├── services/
+│   │   ├── genlayer.js         # GenLayer client factory (StudioNet/Bradbury)
+│   │   ├── contract_address.js # Production contract addresses
+│   │   └── abi.js              # Contract ABI
+│   └── main.jsx                # App entry + RainbowKit/wagmi config
+├── simulate_duels.js           # E2E test suite (6 topics, both networks)
+├── index.html                  # Entry point with ⚔️ favicon
+└── vercel.json                 # SPA routing config
+```
 
 ---
 
@@ -109,4 +165,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
-**[ PVP PREDICTION ARENA ]** // SYSTEM_STATUS: OPERATIONAL
+**⚔️ PVP PREDICTION ARENA** · Live on GenLayer StudioNet & Bradbury · [github.com/AshThunder/pvpprediction](https://github.com/AshThunder/pvpprediction)
