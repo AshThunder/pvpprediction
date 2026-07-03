@@ -838,7 +838,15 @@ const Arena = ({ onBackToHome, onNavigate }) => {
       <AnimatePresence>
         {(isCreating || matchingDuelId || viewingDuelId !== null) && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-6">
-            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white border-4 border-slate-900 p-10 max-w-xl w-full shadow-[16px_16px_0px_0px_#EA580C] max-h-[90vh] overflow-y-auto">
+            <motion.div 
+              initial={{ scale: 0.95, y: 20 }} 
+              animate={{ scale: 1, y: 0 }} 
+              className={`bg-white border-4 border-slate-900 p-10 w-full shadow-[16px_16px_0px_0px_#EA580C] max-h-[90vh] overflow-y-auto ${
+                viewingDuelId !== null && duels.find(d => d.id === viewingDuelId) && (duels.find(d => d.id === viewingDuelId).status === 'RESOLVED' || duels.find(d => d.id === viewingDuelId).status === 'CLAIMED') 
+                  ? 'max-w-5xl' 
+                  : 'max-w-xl'
+              }`}
+            >
               {isCreating ? (
                 <>
                   <h2 className="text-3xl font-black uppercase mb-8 italic tracking-tighter">NEW BATTLE PROPOSAL</h2>
@@ -936,10 +944,16 @@ const Arena = ({ onBackToHome, onNavigate }) => {
                   const duel = duels.find(d => d.id === viewingDuelId);
                   if (!duel) return null;
                   const config = getStatusConfig(duel.status);
+                  const isFinalized = duel.status === 'RESOLVED' || duel.status === 'CLAIMED';
                   return (
                     <div className="flex flex-col">
                       {/* Shareable Card Ref */}
-                      <div ref={cardRef} className="bg-white p-6 border-4 border-slate-900 shadow-[8px_8px_0px_0px_#1E293B] flex flex-col mb-6">
+                      <div 
+                        ref={cardRef} 
+                        className={`bg-white p-6 border-4 border-slate-900 shadow-[8px_8px_0px_0px_#1E293B] flex flex-col mb-6 ${
+                          isFinalized ? 'w-[860px]' : 'w-[500px]'
+                        }`}
+                      >
                         <div className="flex justify-between items-center border-b-2 border-slate-900 pb-4 mb-6">
                           <div className="text-sm font-black text-slate-900 italic font-['Space_Grotesk'] uppercase tracking-tighter flex items-center gap-1.5">
                             <Swords size={18} className="text-orange-600 animate-pulse" />
@@ -948,79 +962,140 @@ const Arena = ({ onBackToHome, onNavigate }) => {
                           <span className="text-[10px] font-bold text-slate-400">ID: {duel.id.toString().padStart(4, '0')}</span>
                         </div>
 
-                        <div className="flex justify-between items-start mb-6">
-                          <span className={`text-[10px] font-black px-2 py-1 text-white uppercase ${config.color} border-2 border-slate-900 shadow-[2px_2px_0px_0px_#000]`}>{config.label}</span>
-                          {duel.deadline > 0n && (
-                            <span className="text-[10px] font-mono text-slate-500">
-                              Deadline: {new Date(Number(duel.deadline) * 1000).toLocaleString()}
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-6">
-                          <div>
-                            <label className="block text-[10px] font-black uppercase text-orange-600 mb-1">Original Claim (Challenger)</label>
-                            <div className="bg-slate-50 p-5 border-2 border-slate-900 font-bold italic text-lg shadow-[4px_4px_0px_0px_#1E293B] text-slate-900">
-                              "{duel.claim}"
+                        {/* Layout conditional on finalization */}
+                        {isFinalized ? (
+                          <div className="flex flex-row gap-8 items-stretch mb-6">
+                            {/* Left Column (Challenger, Opponent, Stake) */}
+                            <div className="w-1/2 flex flex-col justify-between space-y-4 border-r-2 border-slate-200 pr-8">
+                              <div className="space-y-4">
+                                <div className="flex justify-between items-start">
+                                  <span className={`text-[10px] font-black px-2 py-1 text-white uppercase ${config.color} border-2 border-slate-900 shadow-[2px_2px_0px_0px_#000]`}>{config.label}</span>
+                                  {duel.deadline > 0n && (
+                                    <span className="text-[10px] font-mono text-slate-500">
+                                      Deadline: {new Date(Number(duel.deadline) * 1000).toLocaleString()}
+                                    </span>
+                                  )}
+                                </div>
+                                
+                                <div>
+                                  <label className="block text-[10px] font-black uppercase text-orange-600 mb-1">Original Claim (Challenger)</label>
+                                  <div className="bg-slate-50 p-4 border-2 border-slate-900 font-bold italic text-md shadow-[4px_4px_0px_0px_#1E293B] text-slate-900">
+                                    "{duel.claim}"
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-3 ml-1">
+                                    <span className="text-xs font-black uppercase text-slate-400">By</span>
+                                    <Avatar address={duel.challenger} size="w-6 h-6" textSize="text-[10px]"/>
+                                    <span className="text-xs font-mono font-bold text-slate-600 normal-case">{duel.challenger.slice(0, 8)}...{duel.challenger.slice(-8)}</span>
+                                  </div>
+                                </div>
+
+                                {duel.opponent && duel.opponent !== '0x0000000000000000000000000000000000000000' && (
+                                  <div className="pt-1">
+                                    <label className="block text-[10px] font-black uppercase text-blue-600 mb-1">Counter-Context (Opponent)</label>
+                                    <div className="bg-white p-4 border-2 border-slate-900 font-medium text-sm shadow-[4px_4px_0px_0px_#2563EB] text-slate-900">
+                                      {duel.evidence_b || <span className="text-slate-400 italic">No additional context provided.</span>}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-3 ml-1">
+                                      <span className="text-xs font-black uppercase text-slate-400">By</span>
+                                      <Avatar address={duel.opponent} size="w-6 h-6" textSize="text-[10px]"/>
+                                      <span className="text-xs font-mono font-bold text-slate-600 normal-case">{duel.opponent.slice(0, 8)}...{duel.opponent.slice(-8)}</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="pt-4 border-t-2 border-slate-200">
+                                <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Total Stake</div>
+                                <div className="text-2xl font-black text-slate-900 font-headline italic">
+                                  {formatEther(duel.stake)} <span className="text-xs text-orange-600 not-italic ml-1">GEN</span>
+                                </div>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2 mt-4 ml-1">
-                              <span className="text-xs font-black uppercase text-slate-400">By</span>
-                              <Avatar address={duel.challenger} size="w-6 h-6" textSize="text-[10px]"/>
-                              <span className="text-xs font-mono font-bold text-slate-600 truncate">{duel.challenger}</span>
+
+                            {/* Right Column (Commentary HUD) */}
+                            <div className="w-1/2 flex flex-col justify-between">
+                              <div className="flex flex-col h-full justify-between">
+                                <label className="block text-xs font-black uppercase text-orange-600 mb-2 flex items-center gap-2 tracking-widest">
+                                  <TerminalSquare size={14} /> COLOR COMMENTATOR HUD
+                                </label>
+                                <div className="bg-slate-900 text-white p-6 border-4 border-orange-600 shadow-[8px_8px_0px_0px_#000] relative overflow-hidden flex-1 flex flex-col justify-between min-h-[300px]">
+                                  <div className="absolute top-0 right-0 bg-orange-600 text-white px-3 py-1 text-[10px] font-black uppercase italic tracking-tighter">LIVE FEED</div>
+                                  <div className="font-black text-xl mb-4 tracking-tighter flex items-center gap-3 border-b-2 border-slate-700 pb-4 font-headline">
+                                    <Trophy className="text-yellow-400" size={24} /> 
+                                    <div className="flex flex-col">
+                                      <span className="text-[9px] text-slate-400 leading-none mb-1">FINAL VERDICT</span>
+                                      <span className="text-green-400 leading-none uppercase">{duel.winner?.toLowerCase() === duel.challenger?.toLowerCase() ? 'CHALLENGER TAKES IT!' : 'OPPONENT DENIES!'}</span>
+                                    </div>
+                                  </div>
+                                  <div className="relative flex-1">
+                                    <span className="absolute -left-2 top-0 text-orange-600/30 text-5xl font-black leading-none select-none">"</span>
+                                    <p className="text-sm text-white/90 leading-relaxed font-bold italic pl-4 border-l-4 border-orange-600/50 max-h-[170px] overflow-y-auto">
+                                      {duel.reasoning || "Ladies and gentlemen, the AI has spoken but the transcript is missing!"}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
+                        ) : (
+                          // Portrait layout (Open or Matched duels)
+                          <div className="space-y-6 mb-6">
+                            <div className="flex justify-between items-start">
+                              <span className={`text-[10px] font-black px-2 py-1 text-white uppercase ${config.color} border-2 border-slate-900 shadow-[2px_2px_0px_0px_#000]`}>{config.label}</span>
+                              {duel.deadline > 0n && (
+                                <span className="text-[10px] font-mono text-slate-500">
+                                  Deadline: {new Date(Number(duel.deadline) * 1000).toLocaleString()}
+                                </span>
+                              )}
+                            </div>
 
-                          {duel.opponent && duel.opponent !== '0x0000000000000000000000000000000000000000' && (
-                            <div className="pt-2">
-                              <label className="block text-[10px] font-black uppercase text-blue-600 mb-1">Counter-Context (Opponent)</label>
-                              <div className="bg-white p-5 border-2 border-slate-900 font-medium shadow-[4px_4px_0px_0px_#2563EB] text-slate-900">
-                                {duel.evidence_b || <span className="text-slate-400 italic">No additional context provided.</span>}
+                            <div>
+                              <label className="block text-[10px] font-black uppercase text-orange-600 mb-1">Original Claim (Challenger)</label>
+                              <div className="bg-slate-50 p-5 border-2 border-slate-900 font-bold italic text-lg shadow-[4px_4px_0px_0px_#1E293B] text-slate-900">
+                                "{duel.claim}"
                               </div>
                               <div className="flex items-center gap-2 mt-4 ml-1">
                                 <span className="text-xs font-black uppercase text-slate-400">By</span>
-                                <Avatar address={duel.opponent} size="w-6 h-6" textSize="text-[10px]"/>
-                                <span className="text-xs font-mono font-bold text-slate-600 truncate">{duel.opponent}</span>
+                                <Avatar address={duel.challenger} size="w-6 h-6" textSize="text-[10px]"/>
+                                <span className="text-xs font-mono font-bold text-slate-600 normal-case">{duel.challenger.slice(0, 8)}...{duel.challenger.slice(-8)}</span>
                               </div>
                             </div>
-                          )}
 
-                          <div className="pt-4 border-t-2 border-slate-200 flex justify-between items-center">
-                            <div>
-                              <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Total Stake</div>
-                              <div className="text-2xl font-black text-slate-900 font-headline italic">
-                                {formatEther(duel.stake)} <span className="text-xs text-orange-600 not-italic ml-1">GEN</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {(duel.status === 'RESOLVED' || duel.status === 'CLAIMED') && (
-                            <div className="mt-6 border-t-4 border-slate-900 pt-6">
-                              <label className="block text-xs font-black uppercase text-orange-600 mb-2 flex items-center gap-2 tracking-widest">
-                                <TerminalSquare size={14} /> COLOR COMMENTATOR HUD
-                              </label>
-                              <div className="bg-slate-900 text-white p-6 border-4 border-orange-600 shadow-[8px_8px_0px_0px_#000] relative overflow-hidden">
-                                <div className="absolute top-0 right-0 bg-orange-600 text-white px-3 py-1 text-[10px] font-black uppercase italic tracking-tighter">LIVE FEED</div>
-                                <div className="font-black text-xl mb-4 tracking-tighter flex items-center gap-3 border-b-2 border-slate-700 pb-4">
-                                  <Trophy className="text-yellow-400" size={24} /> 
-                                  <div className="flex flex-col">
-                                    <span className="text-[9px] text-slate-400 leading-none mb-1">FINAL VERDICT</span>
-                                    <span className="text-green-400 leading-none uppercase">{duel.winner?.toLowerCase() === duel.challenger?.toLowerCase() ? 'CHALLENGER TAKES IT!' : 'OPPONENT DENIES!'}</span>
-                                  </div>
+                            {duel.opponent && duel.opponent !== '0x0000000000000000000000000000000000000000' && (
+                              <div className="pt-2">
+                                <label className="block text-[10px] font-black uppercase text-blue-600 mb-1">Counter-Context (Opponent)</label>
+                                <div className="bg-white p-5 border-2 border-slate-900 font-medium shadow-[4px_4px_0px_0px_#2563EB] text-slate-900">
+                                  {duel.evidence_b || <span className="text-slate-400 italic">No additional context provided.</span>}
                                 </div>
-                                <div className="relative">
-                                  <span className="absolute -left-2 top-0 text-orange-600/30 text-5xl font-black leading-none select-none">"</span>
-                                  <p className="text-sm text-white/90 leading-relaxed font-bold italic pl-4 border-l-4 border-orange-600/50">
-                                    {duel.reasoning || "Ladies and gentlemen, the AI has spoken but the transcript is missing!"}
-                                  </p>
+                                <div className="flex items-center gap-2 mt-4 ml-1">
+                                  <span className="text-xs font-black uppercase text-slate-400">By</span>
+                                  <Avatar address={duel.opponent} size="w-6 h-6" textSize="text-[10px]"/>
+                                  <span className="text-xs font-mono font-bold text-slate-600 normal-case">{duel.opponent.slice(0, 8)}...{duel.opponent.slice(-8)}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="pt-4 border-t-2 border-slate-200 flex justify-between items-center">
+                              <div>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Total Stake</div>
+                                <div className="text-2xl font-black text-slate-900 font-headline italic">
+                                  {formatEther(duel.stake)} <span className="text-xs text-orange-600 not-italic ml-1">GEN</span>
                                 </div>
                               </div>
                             </div>
-                          )}
-
-                          <div className="pt-6 border-t border-slate-200 flex justify-between items-center text-[9px] font-black uppercase text-slate-400 tracking-widest">
-                            <span>PLATFORM: PVP ARENA</span>
-                            <span>VERIFIED BY GENLAYER AI</span>
                           </div>
+                        )}
+
+                        {/* Card Watermark Footer with appended Contract Address */}
+                        <div className="pt-6 border-t border-slate-200 flex justify-between items-center text-[9px] font-black uppercase text-slate-400 tracking-widest">
+                          <span>
+                            PLATFORM: PVP ARENA | CONTRACT: {
+                              isFinalized 
+                                ? currentContractAddress 
+                                : `${currentContractAddress.slice(0, 8)}...${currentContractAddress.slice(-8)}`
+                            }
+                          </span>
+                          <span>VERIFIED BY GENLAYER AI</span>
                         </div>
                       </div>
 
