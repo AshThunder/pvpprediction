@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useWriteContract, useReadContract, useWaitForTransactionReceipt, usePublicClient, useSwitchChain } from 'wagmi';
-import { Swords, Info, Trophy, AlertCircle, PlusCircle, TerminalSquare, XCircle, DollarSign, Lock, Clock } from 'lucide-react';
+import { Swords, Info, Trophy, AlertCircle, PlusCircle, TerminalSquare, XCircle, DollarSign, Lock, Clock, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseEther, formatEther } from 'viem';
 import { CONTRACT_ADDRESSES, getGenClient, CONTRACT_SUPPORTS_BALANCE } from '../services/genlayer';
@@ -41,7 +41,6 @@ const Arena = ({ onBackToHome, onNavigate }) => {
   const { address, isConnected, chainId } = useAccount();
   const publicClient = usePublicClient();
   const { switchChain } = useSwitchChain();
-  const isWrongNetwork = isConnected && chainId !== 4221;
   const [duels, setDuels] = useState([]);
   const [balance, setBalance] = useState('0.00');
   const [virtualBalance, setVirtualBalance] = useState('0');
@@ -66,7 +65,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
       const countBig = await client.readContract({
         address: currentContractAddress,
         functionName: 'get_next_duel_id',
-        leaderOnly: true,
+        args: [],
       });
       
       const count = Number(countBig || 0n);
@@ -97,18 +96,31 @@ const Arena = ({ onBackToHome, onNavigate }) => {
             address: currentContractAddress,
             functionName: 'get_duel',
             args: [BigInt(i)],
-            leaderOnly: true,
           });
           if (duel && duel.challenger !== '0x0000000000000000000000000000000000000000') {
             fetchedDuels.push({ id: Number(i), ...duel });
           }
-          // 200ms throttle to prevent GenLayer RPC LimitExceededRpcError
-          await new Promise(r => setTimeout(r, 200));
+          // 500ms throttle to prevent GenLayer RPC slot exhaustion
+          await new Promise(r => setTimeout(r, 500));
         } catch (e) {
           console.error(`Error fetching duel ${i}:`, e);
-          if (e.name === 'LimitExceededRpcError' || e.message?.includes('exceeds defined limit') || e.message?.includes('Failed to fetch')) {
-            console.warn("Rate limit or network error hit, stopping fetch for older duels.");
-            break;
+          if (e.name === 'LimitExceededRpcError' || e.message?.includes('exceeds defined limit') || e.message?.includes('Failed to fetch') || e.message?.includes('Server busy') || e.message?.includes('execution slots')) {
+            console.warn("Rate limit or server busy, pausing before continuing...");
+            await new Promise(r => setTimeout(r, 3000));
+            // Retry once after backoff
+            try {
+              const duel = await client.readContract({
+                address: currentContractAddress,
+                functionName: 'get_duel',
+                args: [BigInt(i)],
+              });
+              if (duel && duel.challenger !== '0x0000000000000000000000000000000000000000') {
+                fetchedDuels.push({ id: Number(i), ...duel });
+              }
+            } catch {
+              console.warn("Retry also failed, stopping fetch for older duels.");
+              break;
+            }
           }
         }
       }
@@ -284,15 +296,28 @@ const Arena = ({ onBackToHome, onNavigate }) => {
     throw new Error("Transaction Leader Timeout");
   };
 
+  const ensureValidNetwork = () => {
+    if (!chainId) return null;
+    if (chainId === 61999) return "studionet";
+    if (chainId === 4221) return "testnetBradbury";
+    
+    addToast("Unsupported Network! Please switch your wallet to GenLayer StudioNet or Bradbury.", "error");
+    if (switchChain) {
+      try { switchChain({ chainId: 61999 }); } catch (e) {}
+    }
+    return null;
+  };
+
   const handleCreateDuel = async () => {
-    if (!newClaim || !newStake || !address) return;
+    const netName = ensureValidNetwork();
+    if (!netName || !newClaim || !newStake || !address) return;
     setIsCreating(false);
     setTxStatus('pending');
     setPendingActionIds(prev => new Set(prev).add('create'));
 
     try {
-      const client = getGenClient(chainId || 4221, address);
-      await client.connect("testnetBradbury");
+      const client = getGenClient(chainId, address);
+      await client.connect(netName);
 
       // Calculate deadline timestamp
       const now = Math.floor(Date.now() / 1000);
@@ -345,14 +370,15 @@ const Arena = ({ onBackToHome, onNavigate }) => {
   };
 
   const handleMatchStake = async (duelId, stake, evidence) => {
-    if (!address) return;
+    const netName = ensureValidNetwork();
+    if (!netName || !address) return;
     setMatchingDuelId(null);
     setTxStatus('pending');
     setPendingActionIds(prev => new Set(prev).add(Number(duelId)));
     
     try {
-      const client = getGenClient(chainId || 4221, address);
-      await client.connect("testnetBradbury");
+      const client = getGenClient(chainId, address);
+      await client.connect(netName);
 
       const hash = await client.writeContract({
         address: currentContractAddress,
@@ -389,13 +415,14 @@ const Arena = ({ onBackToHome, onNavigate }) => {
   };
 
   const handleResolveAI = async (duelId) => {
-    if (!address) return;
+    const netName = ensureValidNetwork();
+    if (!netName || !address) return;
     setTxStatus('pending');
     setPendingActionIds(prev => new Set(prev).add(Number(duelId)));
 
     try {
-      const client = getGenClient(chainId || 4221, address);
-      await client.connect("testnetBradbury");
+      const client = getGenClient(chainId, address);
+      await client.connect(netName);
 
       const hash = await client.writeContract({
         address: currentContractAddress,
@@ -431,13 +458,14 @@ const Arena = ({ onBackToHome, onNavigate }) => {
   };
 
   const handleCancelDuel = async (duelId) => {
-    if (!address) return;
+    const netName = ensureValidNetwork();
+    if (!netName || !address) return;
     setTxStatus('pending');
     setPendingActionIds(prev => new Set(prev).add(Number(duelId)));
 
     try {
-      const client = getGenClient(chainId || 4221, address);
-      await client.connect("testnetBradbury");
+      const client = getGenClient(chainId, address);
+      await client.connect(netName);
 
       const hash = await client.writeContract({
         address: currentContractAddress,
@@ -473,12 +501,13 @@ const Arena = ({ onBackToHome, onNavigate }) => {
   };
 
   const handleClaimWinnings = async (duelId) => {
-    if (!address) return;
+    const netName = ensureValidNetwork();
+    if (!netName || !address) return;
     setTxStatus('pending');
 
     try {
-      const client = getGenClient(chainId || 4221, address);
-      await client.connect("testnetBradbury");
+      const client = getGenClient(chainId, address);
+      await client.connect(netName);
 
       const hash = await client.writeContract({
         address: currentContractAddress,
@@ -503,23 +532,7 @@ const Arena = ({ onBackToHome, onNavigate }) => {
     }
   };
 
-  const handleSyncNetwork = async () => {
-    if (!window.ethereum) return;
-    try {
-      await window.ethereum.request({
-        method: 'wallet_addEthereumChain',
-        params: [{
-          chainId: '0xf21f',
-          chainName: 'GenLayer Studio',
-          nativeCurrency: { name: 'GEN', symbol: 'GEN', decimals: 18 },
-          rpcUrls: ['https://studio.genlayer.com/api'],
-          blockExplorerUrls: ['https://explorer-studio.genlayer.com/'],
-        }],
-      });
-    } catch (e) {
-      console.error("Sync error:", e);
-    }
-  };
+
 
   const getStatusConfig = (status) => {
     switch (status) {
@@ -633,12 +646,6 @@ const Arena = ({ onBackToHome, onNavigate }) => {
             <h1 className="text-5xl font-black uppercase font-headline tracking-tighter mb-2 italic">BATTLE CENTER</h1>
             <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">FAIR. DECENTRALIZED. MACHINE-VERIFIED PREDICTIONS.</p>
           </div>
-          <button 
-            onClick={handleSyncNetwork}
-            className="bg-orange-600 text-white px-6 py-2 font-black uppercase tracking-tighter border-2 border-slate-900 shadow-[4px_4px_0px_0px_#000] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all text-xs"
-          >
-            🔄 SYNC BRADBURY NET
-          </button>
         </section>
 
         <ActivityFeed duels={duels} />
@@ -698,7 +705,10 @@ const Arena = ({ onBackToHome, onNavigate }) => {
         {activeTab === 'LEADERBOARD' ? renderLeaderboard() : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {loading && duels.length === 0 ? (
-            <div className="col-span-full py-20 text-center font-black uppercase tracking-widest text-slate-400">Syncing Bradbury Net...</div>
+            <div className="col-span-full py-20 flex flex-col items-center justify-center gap-4 font-black uppercase tracking-widest text-slate-400">
+              <Loader2 className="animate-spin text-orange-600" size={32} />
+              Syncing Network...
+            </div>
           ) : (
             duels.filter(d => {
               const addr = address?.toLowerCase();

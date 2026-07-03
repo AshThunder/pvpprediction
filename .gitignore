@@ -23,3 +23,18 @@ test_resolve.mjs
 debug_contract.mjs
 fetch_tx.mjs
 recover_deploy.mjs
+
+# Utility/debug scripts
+check_balance.js
+complete_bradbury.js
+create_open_duels.js
+debug_resolve.js
+deploy_contract.js
+finalize_and_verify.js
+finalize_tx.js
+get_error.js
+inspect_tx.js
+raw_receipt.js
+seed_duels.mjs
+test_local.py
+test_read.js

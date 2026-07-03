@@ -82,7 +82,7 @@ const Home = ({ onEnterArena, onNavigate }) => {
             >
               <div className="inline-flex items-center gap-2 bg-slate-900 text-white px-4 py-1.5 font-label text-xs tracking-widest mb-6 uppercase">
                 <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                STATUS: ONLINE — BRADBURY TESTNET
+                STATUS: ONLINE — STUDIONET & BRADBURY
               </div>
               <h1 className="font-headline font-black text-6xl md:text-8xl leading-[0.9] tracking-tighter text-slate-900 mb-8 uppercase italic">
                 PREDICT.<br/>STAKE.<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-500">WIN.</span>
@@ -228,7 +228,7 @@ const Home = ({ onEnterArena, onNavigate }) => {
           <div className="container mx-auto max-w-5xl">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
-                { label: 'Network', value: 'GenLayer', sub: 'BRADBURY TESTNET' },
+                { label: 'Network', value: 'GenLayer', sub: 'STUDIONET & BRADBURY' },
                 { label: 'Resolution', value: 'AI', sub: 'MULTI-NODE CONSENSUS' },
                 { label: 'Settlement', value: 'Instant', sub: 'ON-CHAIN PAYOUTS' },
                 { label: 'Fees', value: '2%', sub: 'PLATFORM FEE' },

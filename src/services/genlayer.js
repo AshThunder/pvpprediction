@@ -1,24 +1,23 @@
 import { createClient } from 'genlayer-js';
-import { studionet } from 'genlayer-js/chains';
+import { studionet, testnetBradbury } from 'genlayer-js/chains';
 
-import { CONTRACT_ADDRESS, CONTRACT_SUPPORTS_BALANCE } from './contract_address';
+import { CONTRACT_ADDRESSES, CONTRACT_SUPPORTS_BALANCE } from './contract_address';
 
-export { CONTRACT_SUPPORTS_BALANCE };
+export { CONTRACT_ADDRESSES, CONTRACT_SUPPORTS_BALANCE };
 
-export const CONTRACT_ADDRESSES = {
-  // GenLayer Studio Network
-  61999: CONTRACT_ADDRESS,
-};
-
-export const getGenClient = (chainId, account) => {
+export const getGenClient = (chainId = 61999, account = undefined) => {
+  if (chainId === 4221) {
+    return createClient({
+      chain: testnetBradbury,
+      transport: 'https://rpc-bradbury.genlayer.com',
+      account: account
+    });
+  }
+  
   return createClient({
     chain: {
       ...studionet,
       name: 'GenLayer Studio',
-      rpcUrls: {
-        default: { http: ['https://studio.genlayer.com/api'] },
-        public: { http: ['https://studio.genlayer.com/api'] },
-      }
     },
     transport: 'https://studio.genlayer.com/api',
     account: account
